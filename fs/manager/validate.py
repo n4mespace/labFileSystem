@@ -14,7 +14,7 @@ def validate_mkfs(n: int, error_cb: Callable[[str], None]) -> int:
 
 
 def validate_read_and_write(
-        params: tuple[str, str, str], error_cb: Callable[[str], None]
+    params: tuple[str, str, str], error_cb: Callable[[str], None]
 ) -> tuple[str, int, int]:
     fd, offset, size = params
     print(params)
@@ -29,7 +29,7 @@ def validate_read_and_write(
 
 
 def validate_truncate(
-        params: tuple[str, str], error_cb: Callable[[str], None]
+    params: tuple[str, str], error_cb: Callable[[str], None]
 ) -> tuple[str, int]:
     name, size = params
 
@@ -39,9 +39,7 @@ def validate_truncate(
     return name, int(size)
 
 
-def validate_filename(
-        name: str, error_cb: Callable[[str], None]
-) -> str:
+def validate_filename(name: str, error_cb: Callable[[str], None]) -> str:
     if len(name) > FILENAME_MAXSIZE_BYTES:
         error_cb(f"File name length must be less than {FILENAME_MAXSIZE_BYTES}.")
 

@@ -1,21 +1,21 @@
 import logging
 from abc import abstractmethod, ABC
+from typing import Any
 
 from fs.config import SystemConfig
 from fs.driver.memory import MemoryStorageProxy
 
 
 class BaseFSCommand(ABC):
-    _memory_proxy = MemoryStorageProxy()
-    _system_data = SystemConfig()
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.args = args
+        self.kwargs = kwargs
 
-    _logger = logging.getLogger(__name__)
+        self._memory_proxy = MemoryStorageProxy()
+        self._system_data = SystemConfig()
+
+        self._logger = logging.getLogger(__name__)
 
     @abstractmethod
     def exec(self) -> None:
-        raise NotImplementedError
-
-    @property
-    def config(self) -> SystemConfig:
-        with self._system_data.config as system_config:
-            return system_config
+        raise NotImplementedError("Command must implement its exec method.")

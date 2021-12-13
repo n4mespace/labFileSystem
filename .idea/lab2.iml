@@ -3,6 +3,18 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/.ve" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/5/e" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/5/f" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/4" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/6" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/7" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/8" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/a" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/b" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/e" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/sonarlint/issuestore/f" />
+      <excludeFolder url="file://$MODULE_DIR$/.pytest_cache" />
+      <excludeFolder url="file://$MODULE_DIR$/.pytest_cache/v" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (lab2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

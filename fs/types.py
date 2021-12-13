@@ -14,9 +14,14 @@ class Block:
     def write_link(self, name: str, descriptor_id: int) -> None:
         offset = 0
 
-        for link_mapping_step in range(0, BLOCK_CONTENT_SIZE_BYTES - DIRECTORY_MAPPING_BYTES,
-                                       DIRECTORY_MAPPING_BYTES):
-            mapping_bytes = self.content[link_mapping_step: link_mapping_step + DIRECTORY_MAPPING_BYTES]
+        for link_mapping_step in range(
+            0,
+            BLOCK_CONTENT_SIZE_BYTES - DIRECTORY_MAPPING_BYTES,
+            DIRECTORY_MAPPING_BYTES,
+        ):
+            mapping_bytes = self.content[
+                link_mapping_step : link_mapping_step + DIRECTORY_MAPPING_BYTES
+            ]
 
             if not any(mapping_bytes):
                 offset = link_mapping_step
@@ -31,9 +36,14 @@ class Block:
     def get_links(self) -> dict:
         links = {}
 
-        for link_mapping_step in range(0, BLOCK_CONTENT_SIZE_BYTES - DIRECTORY_MAPPING_BYTES,
-                                       DIRECTORY_MAPPING_BYTES):
-            mapping_bytes = self.content[link_mapping_step: link_mapping_step + DIRECTORY_MAPPING_BYTES]
+        for link_mapping_step in range(
+            0,
+            BLOCK_CONTENT_SIZE_BYTES - DIRECTORY_MAPPING_BYTES,
+            DIRECTORY_MAPPING_BYTES,
+        ):
+            mapping_bytes = self.content[
+                link_mapping_step : link_mapping_step + DIRECTORY_MAPPING_BYTES
+            ]
 
             # Run out of links.
             if not any(mapping_bytes):
@@ -48,9 +58,14 @@ class Block:
         return links
 
     def remove_link(self, name: str) -> None:
-        for link_mapping_step in range(0, BLOCK_CONTENT_SIZE_BYTES - DIRECTORY_MAPPING_BYTES,
-                                       DIRECTORY_MAPPING_BYTES):
-            mapping_bytes = self.content[link_mapping_step: link_mapping_step + DIRECTORY_MAPPING_BYTES]
+        for link_mapping_step in range(
+            0,
+            BLOCK_CONTENT_SIZE_BYTES - DIRECTORY_MAPPING_BYTES,
+            DIRECTORY_MAPPING_BYTES,
+        ):
+            mapping_bytes = self.content[
+                link_mapping_step : link_mapping_step + DIRECTORY_MAPPING_BYTES
+            ]
 
             # Run out of links.
             if not any(mapping_bytes):
@@ -60,7 +75,9 @@ class Block:
             link_name = "".join(chr(b) for b in name_bytes if b)
 
             if name == link_name:
-                for i in range(link_mapping_step, link_mapping_step + DIRECTORY_MAPPING_BYTES):
+                for i in range(
+                    link_mapping_step, link_mapping_step + DIRECTORY_MAPPING_BYTES
+                ):
                     self.content[i] = 0
 
                 break

@@ -1,12 +1,13 @@
+import contextlib
 import logging
 from pathlib import Path
-from typing import Any, BinaryIO, Optional
+from typing import Any, BinaryIO, Optional, Generator
 
 from constants import (BLOCK_CONTENT_SIZE_BYTES, BLOCK_HEADER_SIZE_BYTES,
-                       BLOCK_SIZE_BYTES, MEMORY_PATH, N_BLOCKS_MAX)
-from fs.exceptions import FSAlreadyMounted, FSNotMounted, OutOfBlocks
-from fs.types import (Block, BlockContent, BlockHeader, BlockHeaderBytes,
-                      Descriptor, Directory, DirectoryDescriptor, File,
+                       BLOCK_SIZE_BYTES, MEMORY_PATH)
+from fs.driver.utils import form_header_bytes, form_header_from_bytes
+from fs.exceptions import FSAlreadyMounted, FSNotMounted, WrongDescriptorClass
+from fs.types import (Block, BlockContent, BlockHeader, Descriptor, Directory, DirectoryDescriptor, File,
                       FileDescriptor)
 
 
@@ -17,22 +18,19 @@ class MemoryStorageProxy:
 
         self._logger = logging.getLogger(__name__)
 
-    def __enter__(self) -> 'MemoryStorageProxy':
-        self._memory = open(self._memory_path, "r+b")
-        return self
-
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        self._memory.close()
-
     @property
-    def memory(self) -> BinaryIO:
-        if not self._memory:
-            raise AttributeError("Can't access memory resource. Use Proxy class as context manager.")
+    @contextlib.contextmanager
+    def memory(self) -> Generator[BinaryIO, Any, Any]:
+        self._memory = open(self._memory_path, "r+b")
 
-        return self._memory
+        try:
+            yield self._memory
+        finally:
+            self._memory.close()
 
     def clear(self) -> None:
-        self.memory.truncate(0)
+        with self.memory as m:
+            m.truncate(0)
 
     def create_memory_file(self) -> None:
         if self._memory_path.exists():
@@ -51,101 +49,74 @@ class MemoryStorageProxy:
     def write(self, descriptor: Descriptor) -> None:
         directory = isinstance(descriptor, DirectoryDescriptor)
 
-        for block in descriptor.blocks:
-            self.memory.seek(block.n * BLOCK_SIZE_BYTES)
+        with self.memory as m:
+            for block in descriptor.blocks:
+                m.seek(block.n * BLOCK_SIZE_BYTES)
 
-            self.write_block(
-                BlockContent(
-                    header=BlockHeader(
-                        used=True,
-                        directory=directory,
-                        ref_count=1,
-                        size=sum(map(bool, block.content)),
-                        opened=descriptor.opened,
-                    ),
-                    content=block.content,
+                self.write_block(
+                    BlockContent(
+                        header=BlockHeader(
+                            used=True,
+                            directory=directory,
+                            ref_count=1,
+                            size=sum(map(bool, block.content)),
+                            opened=descriptor.opened,
+                        ),
+                        content=block.content,
+                    )
                 )
-            )
 
-    def write_empty_blocks(self, n: int) -> None:
-        for _ in range(n):
-            self.write_block(
-                BlockContent(
-                    header=BlockHeader(
-                        used=False,
-                        directory=False,
-                        ref_count=0,
-                        size=0,
-                        opened=False,
-                    ),
+    def write_empty_blocks(self, n: int, start_from: int = 0) -> None:
+        with self.memory as m:
+            for i in range(start_from, n):
+                m.seek(i * BLOCK_SIZE_BYTES)
+
+                self.write_block(
+                    BlockContent(
+                        header=BlockHeader(
+                            used=False,
+                            directory=False,
+                            ref_count=0,
+                            size=0,
+                            opened=False,
+                        ),
+                    )
                 )
-            )
 
     def write_block(self, block: BlockContent) -> None:
-        header_bytes = self._form_header_bytes(block.header)
-        self.memory.write(header_bytes + block.content)
-
-    @staticmethod
-    def _form_header_bytes(header: BlockHeader) -> bytearray:
-        header_bytes: bytearray = bytearray(BLOCK_HEADER_SIZE_BYTES)
-
-        header_bytes[BlockHeaderBytes.DIRECTORY] = header.directory
-        header_bytes[BlockHeaderBytes.USED] = header.used
-        header_bytes[BlockHeaderBytes.REF_COUNT] = header.ref_count
-        header_bytes[BlockHeaderBytes.SIZE] = header.size
-        header_bytes[BlockHeaderBytes.OPENED] = header.opened
-
-        return header_bytes
-
-    @staticmethod
-    def _form_header_from_bytes(header_bytes: bytes) -> BlockHeader:
-        header = BlockHeader()
-
-        header.directory = header_bytes[BlockHeaderBytes.DIRECTORY]
-        header.used = header_bytes[BlockHeaderBytes.USED]
-        header.ref_count = header_bytes[BlockHeaderBytes.REF_COUNT]
-        header.size = header_bytes[BlockHeaderBytes.SIZE]
-        header.opened = header_bytes[BlockHeaderBytes.OPENED]
-
-        return header
-
-    @staticmethod
-    def get_available_block(used_blocks: list[int]) -> int:
-        available_blocks = [n for n in range(N_BLOCKS_MAX) if n not in used_blocks]
-
-        try:
-            return available_blocks[0]
-        except IndexError:
-            raise OutOfBlocks("System run out of available blocks")
+        header_bytes = form_header_bytes(block.header)
+        self._memory.write(header_bytes + block.content)
 
     def add_ref_count(self, descriptor: Descriptor, c: int) -> int:
         total_ref_count = 0
 
-        for block in descriptor.blocks:
-            self.memory.seek(block.n * BLOCK_SIZE_BYTES)
+        with self.memory as m:
+            for block in descriptor.blocks:
+                m.seek(block.n * BLOCK_SIZE_BYTES)
 
-            header_bytes = self.memory.read(BLOCK_HEADER_SIZE_BYTES)
-            header = self._form_header_from_bytes(header_bytes)
-            header.ref_count += c
+                header_bytes = m.read(BLOCK_HEADER_SIZE_BYTES)
+                header = form_header_from_bytes(header_bytes)
+                header.ref_count += c
 
-            total_ref_count += header.ref_count
+                total_ref_count += header.ref_count
 
-            if not header.ref_count:
-                # Then deleting a block.
-                header.used = False
+                if not header.ref_count:
+                    # Then deleting a block.
+                    header.used = False
 
-            self.memory.seek(block.n * BLOCK_SIZE_BYTES)
-            self.memory.write(self._form_header_bytes(header))
+                m.seek(block.n * BLOCK_SIZE_BYTES)
+                m.write(form_header_bytes(header))
 
         return total_ref_count
 
     def read_block(self, block_n: int) -> tuple[BlockHeader, Block]:
-        self.memory.seek(block_n * BLOCK_SIZE_BYTES)
+        with self.memory as m:
+            m.seek(block_n * BLOCK_SIZE_BYTES)
 
-        header_bytes = self.memory.read(BLOCK_HEADER_SIZE_BYTES)
-        content_bytes = self.memory.read(BLOCK_CONTENT_SIZE_BYTES)
+            header_bytes = m.read(BLOCK_HEADER_SIZE_BYTES)
+            content_bytes = m.read(BLOCK_CONTENT_SIZE_BYTES)
 
-        header = self._form_header_from_bytes(header_bytes)
+        header = form_header_from_bytes(header_bytes)
 
         return header, Block(n=block_n, content=bytearray(content_bytes))
 
@@ -170,6 +141,14 @@ class MemoryStorageProxy:
             return DirectoryDescriptor(**descriptor_params)
 
         return FileDescriptor(**descriptor_params)
+
+    def get_directory_descriptor(self, n: int, blocks: list[int]) -> DirectoryDescriptor:
+        descriptor = self.get_descriptor(n, blocks)
+
+        if not isinstance(descriptor, DirectoryDescriptor):
+            raise WrongDescriptorClass("Get wrong descriptor class.")
+
+        return descriptor
 
     def create_directory(self, n: int, block_n: int, name: str, parent: DirectoryDescriptor,
                          opened: bool = False, root: bool = False) -> Directory:

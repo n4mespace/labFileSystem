@@ -1,10 +1,26 @@
+from typing import Type
+
+from fs.commands.base import BaseFSCommand
+from fs.commands.close import CloseCommand
+from fs.commands.create import CreateCommand
+from fs.commands.fstat import FstatCommand
+from fs.commands.link import LinkCommand
+from fs.commands.ls import LsCommand
+from fs.commands.mkfs import MkfsCommand
+from fs.commands.mount import MountCommand
+from fs.commands.open import OpenCommand
+from fs.commands.read import ReadCommand
+from fs.commands.truncate import TruncateCommand
+from fs.commands.umount import UmountCommand
+from fs.commands.unlink import UnlinkCommand
+from fs.commands.write import WriteCommand
 from fs.manager.parser import parser_factory
 from fs.manager.validate import (
     validate_mkfs,
     validate_read_and_write,
-    validate_truncate, validate_filename,
+    validate_truncate,
+    validate_filename,
 )
-from fs.service import FsCommandHandlerService
 
 
 class FsManager:
@@ -12,10 +28,25 @@ class FsManager:
     Logic for input args handling.
     """
 
+    commands: dict[str, Type[BaseFSCommand]] = {
+        "mkfs": MkfsCommand,
+        "mount": MountCommand,
+        "umount": UmountCommand,
+        "fstat": FstatCommand,
+        "create": CreateCommand,
+        "ls": LsCommand,
+        "open": OpenCommand,
+        "close": CloseCommand,
+        "read": ReadCommand,
+        "write": WriteCommand,
+        "link": LinkCommand,
+        "unlink": UnlinkCommand,
+        "truncate": TruncateCommand,
+    }
+
     def __init__(self) -> None:
         self.parser = parser_factory()
         self.args = self.parser.parse_args()
-        self.fs_handler = FsCommandHandlerService()
 
     def handle_input(self) -> None:
         """
@@ -25,50 +56,50 @@ class FsManager:
 
         if self.args.mkfs > -1:
             n = validate_mkfs(self.args.mkfs, self.parser.error)
-            self.fs_handler.mkfs(n)
+            self.commands["mkfs"](n=n).exec()
 
         elif self.args.mount:
-            self.fs_handler.mount()
+            self.commands["mount"]().exec()
 
         elif self.args.umount:
-            self.fs_handler.umount()
+            self.commands["umount"]().exec()
 
         elif self.args.fstat > -1:
-            self.fs_handler.fstat(fid=self.args.fstat)
+            self.commands["fstat"](fid=self.args.fstat).exec()
 
         elif self.args.ls:
-            self.fs_handler.ls()
+            self.commands["ls"]().exec()
 
         elif self.args.create:
             filename = validate_filename(self.args.create, self.parser.error)
-            self.fs_handler.create(name=filename)
+            self.commands["create"](name=filename).exec()
 
         elif self.args.open:
             filename = validate_filename(self.args.open, self.parser.error)
-            self.fs_handler.open(name=filename)
+            self.commands["open"](name=filename).exec()
 
         elif self.args.close:
-            self.fs_handler.close(fd=self.args.close)
+            self.commands["close"](fd=self.args.close).exec()
 
         elif self.args.read:
             fd, offset, size = validate_read_and_write(
                 self.args.read, self.parser.error
             )
-            self.fs_handler.read(fd, offset, size)
+            self.commands["read"](fd=fd, offset=offset, size=size).exec()
 
         elif self.args.write:
             fd, offset, size = validate_read_and_write(
                 self.args.write, self.parser.error
             )
-            self.fs_handler.write(fd, offset, size)
+            self.commands["write"](fd=fd, offset=offset, size=size).exec()
 
         elif self.args.link:
             name1, name2 = self.args.link
-            self.fs_handler.link(name1, name2)
+            self.commands["link"](name1=name1, name2=name2).exec()
 
         elif self.args.unlink:
-            self.fs_handler.unlink(self.args.unlink)
+            self.commands["unlink"](name=self.args.unlink).exec()
 
         elif self.args.truncate:
             name, size = validate_truncate(self.args.truncate, self.parser.error)
-            self.fs_handler.truncate(name, size)
+            self.commands["truncate"](name=name, size=size).exec()
