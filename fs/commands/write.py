@@ -27,8 +27,11 @@ class WriteCommand(BaseFSCommand):
         descriptor = self._memory_proxy.get_file_descriptor(
             descriptor_id, descriptor_blocks
         )
-        descriptor.write_content(content)
+        descriptor.write_content(content, offset)
+        descriptor.update_size()
+
         self._memory_proxy.write(descriptor)
+        self._system_data.write_descriptor_to_config(descriptor, name)
 
         self._logger.info(
             f"Successfully written `{content}` to [{name}] with fd [{fd}]."

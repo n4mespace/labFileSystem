@@ -20,6 +20,12 @@ class Descriptor:
 
         self.blocks.append(Block(n=block_n))
 
+    def update_size(self) -> None:
+        self.size = 0
+
+        for block in self.blocks:
+            self.size += sum(map(bool, block.content))
+
 
 @dataclass
 class FSObject:

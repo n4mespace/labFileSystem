@@ -247,3 +247,38 @@ class FSWorkTests(TestCase):
 
         content = file.read_content(len(test_content), offset=0)
         self.assertEqual(content, test_content)
+
+    def test_write_large_data_to_file(self) -> None:
+        filename = "file1"
+        CreateCommand(name=filename).exec()
+
+        test_fd = 100
+
+        # For getting predictable `fd` we should mock `random.randint` result.
+        with mock.patch("random.randint", lambda _x, _y: test_fd):
+            OpenCommand(name=filename).exec()
+
+        test_content = (
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
+            "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, "
+            "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
+            "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu "
+            "fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa "
+            "qui officia deserunt mollit anim id est laborum."
+        )
+
+        command = WriteCommand(fd=str(test_fd), offset=3, content=test_content)
+        command.exec()
+
+        file_descriptor = command._system_data.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+            file_descriptor
+        )
+
+        file = command._memory_proxy.get_descriptor(
+            file_descriptor, file_descriptor_blocks
+        )
+        self.assertEqual(file.size, len(test_content))
+
+        content = file.read_content(len(test_content), offset=3)
+        self.assertEqual(content, test_content)
