@@ -4,11 +4,12 @@ import random
 from collections.abc import Generator
 from dataclasses import asdict
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any, Optional
 
 from constants import CONFIG_PATH, FD_GENERATION_RANGE
+from fs.driver.utils import Config, DescriptorConfig
 from fs.exceptions import OutOfDescriptors
-from fs.types import Config, DescriptorConfig, Descriptor
+from fs.models.descriptor.base import Descriptor
 
 
 class SystemConfig:
@@ -72,6 +73,10 @@ class SystemConfig:
             return [
                 block for descriptor in c.descriptors for block in descriptor.blocks
             ]
+
+    def add_block_to_descriptor(self, descriptor_id: int, block_n: int) -> None:
+        with self.config as c:
+            c.descriptors[descriptor_id].blocks.append(block_n)
 
     def remove_descriptor_from_config(self, descriptor: Descriptor, name: str) -> None:
         self.unmap_name_from_descriptor(name)
@@ -152,3 +157,7 @@ class SystemConfig:
     def unmap_fd_from_name(self, fd: str) -> None:
         with self.config as c:
             c.fd_to_name.pop(fd)
+
+    def check_system_formatted(self) -> bool:
+        with self.config as c:
+            return bool(c.descriptors)

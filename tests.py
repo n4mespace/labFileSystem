@@ -1,10 +1,10 @@
 from unittest import TestCase
 
 from constants import (
+    BLOCK_HEADER_SIZE_BYTES,
     BLOCK_SIZE_BYTES,
     N_BLOCKS_MAX,
     N_DESCRIPTORS,
-    BLOCK_HEADER_SIZE_BYTES,
 )
 from fs.commands.create import CreateCommand
 from fs.commands.link import LinkCommand
@@ -14,12 +14,11 @@ from fs.commands.umount import UmountCommand
 from fs.commands.unlink import UnlinkCommand
 from fs.driver.utils import form_header_from_bytes
 from fs.exceptions import FSNotMounted
-from fs.types import FileDescriptor
+from fs.models.descriptor.file import FileDescriptor
 
 
 class FSTests(TestCase):
     def setUp(self) -> None:
-
         try:
             UmountCommand().exec()
         except FSNotMounted:
@@ -56,13 +55,38 @@ class FSTests(TestCase):
         command = CreateCommand(name=filename)
         command.exec()
 
-        self.assertTrue(filename in command._system_data.get_name_to_descriptor_mapping())
+        self.assertTrue(
+            filename in command._system_data.get_name_to_descriptor_mapping()
+        )
 
         file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(file_descriptor)
+        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+            file_descriptor
+        )
 
-        file = command._memory_proxy.get_descriptor(file_descriptor, file_descriptor_blocks)
+        file = command._memory_proxy.get_descriptor(
+            file_descriptor, file_descriptor_blocks
+        )
         self.assertIsInstance(file, FileDescriptor)
+
+    def test_create_n_files(self) -> None:
+        MountCommand().exec()
+        MkfsCommand(n=N_DESCRIPTORS).exec()
+
+        for i in range(5):
+            filename = f"file_{i}"
+            command = CreateCommand(name=filename)
+            command.exec()
+
+            file_descriptor = command._system_data.get_descriptor_id(filename)
+            file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+                file_descriptor
+            )
+
+            file = command._memory_proxy.get_descriptor(
+                file_descriptor, file_descriptor_blocks
+            )
+            self.assertIsInstance(file, FileDescriptor)
 
     def test_link_file(self) -> None:
         MountCommand().exec()
@@ -80,9 +104,13 @@ class FSTests(TestCase):
 
         self.assertEqual(file_descriptor, file_link_descriptor)
 
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(file_descriptor)
+        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+            file_descriptor
+        )
 
-        file = command._memory_proxy.get_descriptor(file_descriptor, file_descriptor_blocks)
+        file = command._memory_proxy.get_descriptor(
+            file_descriptor, file_descriptor_blocks
+        )
         self.assertEqual(file.refs_count, 2)
 
     def test_unlink_file(self) -> None:
@@ -98,12 +126,18 @@ class FSTests(TestCase):
         command = UnlinkCommand(name=link_filename)
         command.exec()
 
-        self.assertTrue(link_filename not in command._system_data.get_name_to_descriptor_mapping())
+        self.assertTrue(
+            link_filename not in command._system_data.get_name_to_descriptor_mapping()
+        )
 
         file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(file_descriptor)
+        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+            file_descriptor
+        )
 
-        file = command._memory_proxy.get_descriptor(file_descriptor, file_descriptor_blocks)
+        file = command._memory_proxy.get_descriptor(
+            file_descriptor, file_descriptor_blocks
+        )
         self.assertEqual(file.refs_count, 1)
 
     def test_delete_file(self) -> None:
@@ -116,11 +150,15 @@ class FSTests(TestCase):
         command = UnlinkCommand(name=filename)
 
         file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(file_descriptor)
+        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+            file_descriptor
+        )
 
         command.exec()
 
-        file = command._memory_proxy.get_descriptor(file_descriptor, file_descriptor_blocks)
+        file = command._memory_proxy.get_descriptor(
+            file_descriptor, file_descriptor_blocks
+        )
 
         self.assertEqual(file.refs_count, 0)
 

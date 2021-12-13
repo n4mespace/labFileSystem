@@ -9,7 +9,9 @@ class LinkCommand(BaseFSCommand):
         descriptor_blocks = self._system_data.get_descriptor_blocks(descriptor_id)
 
         if descriptor_id:
-            descriptor = self._memory_proxy.get_descriptor(descriptor_id, descriptor_blocks)
+            descriptor = self._memory_proxy.get_descriptor(
+                descriptor_id, descriptor_blocks
+            )
             self._memory_proxy.add_ref_count(descriptor, 1)
 
             self._system_data.map_name_to_descriptor(name2, descriptor_id)

@@ -1,6 +1,6 @@
 from collections import Callable
 
-from constants import N_DESCRIPTORS, FILENAME_MAXSIZE_BYTES
+from constants import FILENAME_MAXSIZE_BYTES, N_DESCRIPTORS
 
 
 def validate_mkfs(n: int, error_cb: Callable[[str], None]) -> int:

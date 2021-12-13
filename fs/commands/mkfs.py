@@ -1,4 +1,4 @@
-from constants import ROOT_DESCRIPTOR_N, ROOT_BLOCK_N, N_BLOCKS_MAX
+from constants import N_BLOCKS_MAX, ROOT_DESCRIPTOR_N
 from fs.commands.base import BaseFSCommand
 from fs.exceptions import FSNotMounted
 
@@ -15,7 +15,6 @@ class MkfsCommand(BaseFSCommand):
         self._system_data.init_descriptors(n)
         root = self._memory_proxy.create_directory(
             n=ROOT_DESCRIPTOR_N,
-            block_n=ROOT_BLOCK_N,
             name="",
             opened=True,
             parent=None,  # noqa: For root dir we hardcode parent link.

@@ -1,8 +1,23 @@
-from constants import (BLOCK_HEADER_SIZE_BYTES,
-                       N_BLOCKS_MAX)
-from fs.exceptions import OutOfBlocks
-from fs.types import (BlockHeader)
-from fs.types import (BlockHeaderBytes)
+from dataclasses import dataclass, field
+
+from constants import BLOCK_HEADER_SIZE_BYTES
+from fs.models.raw import BlockHeader
+from fs.models.utils import BlockHeaderBytes
+
+
+@dataclass
+class DescriptorConfig:
+    n: int
+    used: bool = False
+    blocks: list[int] = field(default_factory=list)
+
+
+@dataclass
+class Config:
+    descriptors: list[DescriptorConfig] = field(default_factory=list)
+    name_to_descriptor: dict[str, int] = field(default_factory=dict)
+    fd_to_name: dict[str, str] = field(default_factory=dict)
+    mounted: bool = False
 
 
 def form_header_bytes(header: BlockHeader) -> bytearray:
@@ -27,12 +42,3 @@ def form_header_from_bytes(header_bytes: bytes) -> BlockHeader:
     header.opened = header_bytes[BlockHeaderBytes.OPENED]
 
     return header
-
-
-def get_available_block(used_blocks: list[int]) -> int:
-    available_blocks = set(range(N_BLOCKS_MAX)) - set(used_blocks)
-
-    try:
-        return list(available_blocks)[0]
-    except IndexError:
-        raise OutOfBlocks("System run out of available blocks")

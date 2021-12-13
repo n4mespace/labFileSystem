@@ -12,12 +12,16 @@ class UnlinkCommand(BaseFSCommand):
         root_blocks = self._system_data.get_descriptor_blocks(ROOT_DESCRIPTOR_N)
 
         if descriptor_id:
-            descriptor = self._memory_proxy.get_descriptor(descriptor_id, descriptor_blocks)
+            descriptor = self._memory_proxy.get_descriptor(
+                descriptor_id, descriptor_blocks
+            )
             total_refs_count = self._memory_proxy.add_ref_count(descriptor, -1)
 
             if not total_refs_count:
-                current_directory_descriptor = self._memory_proxy.get_directory_descriptor(
-                    ROOT_DESCRIPTOR_N, root_blocks
+                current_directory_descriptor = (
+                    self._memory_proxy.get_directory_descriptor(
+                        ROOT_DESCRIPTOR_N, root_blocks
+                    )
                 )
                 current_directory_descriptor.remove_directory_link(name)
 

@@ -1,5 +1,5 @@
 from fs.commands.base import BaseFSCommand
-from fs.exceptions import FileNotExists, FileDescriptorNotExists
+from fs.exceptions import FileDescriptorNotExists, FileNotExists
 
 
 class CloseCommand(BaseFSCommand):

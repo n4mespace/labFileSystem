@@ -1,14 +1,19 @@
 import contextlib
 import logging
 from pathlib import Path
-from typing import Any, BinaryIO, Optional, Generator
+from typing import Any, BinaryIO, Generator, Optional
 
 from constants import (BLOCK_CONTENT_SIZE_BYTES, BLOCK_HEADER_SIZE_BYTES,
-                       BLOCK_SIZE_BYTES, MEMORY_PATH)
+                       BLOCK_SIZE_BYTES, MEMORY_PATH, N_BLOCKS_MAX,
+                       ROOT_BLOCK_N)
 from fs.driver.utils import form_header_bytes, form_header_from_bytes
-from fs.exceptions import FSAlreadyMounted, FSNotMounted, WrongDescriptorClass
-from fs.types import (Block, BlockContent, BlockHeader, Descriptor, Directory, DirectoryDescriptor, File,
-                      FileDescriptor)
+from fs.exceptions import (FSAlreadyMounted, FSNotMounted, OutOfBlocks,
+                           WrongDescriptorClass)
+from fs.models.block import Block
+from fs.models.descriptor.base import Descriptor
+from fs.models.descriptor.directory import Directory, DirectoryDescriptor
+from fs.models.descriptor.file import File, FileDescriptor
+from fs.models.raw import BlockContent, BlockHeader
 
 
 class MemoryStorageProxy:
@@ -109,6 +114,22 @@ class MemoryStorageProxy:
 
         return total_ref_count
 
+    def get_available_block_n(self) -> int:
+        for block_n in range(N_BLOCKS_MAX):
+            block_header, _ = self.read_block(block_n)
+
+            if not block_header.used:
+                block_header.used = True
+
+                with self.memory as m:
+                    # Prevent collision when demand multiple new blocks.
+                    m.seek(block_n * BLOCK_SIZE_BYTES)
+                    m.write(form_header_bytes(block_header))
+
+                return block_n
+
+        raise OutOfBlocks("System run out of available blocks")
+
     def read_block(self, block_n: int) -> tuple[BlockHeader, Block]:
         with self.memory as m:
             m.seek(block_n * BLOCK_SIZE_BYTES)
@@ -150,8 +171,10 @@ class MemoryStorageProxy:
 
         return descriptor
 
-    def create_directory(self, n: int, block_n: int, name: str, parent: DirectoryDescriptor,
+    def create_directory(self, n: int, name: str, parent: DirectoryDescriptor,
                          opened: bool = False, root: bool = False) -> Directory:
+        block_n = ROOT_BLOCK_N if root else self.get_available_block_n()
+
         descriptor = DirectoryDescriptor(
             n=n,
             size=0,
@@ -168,7 +191,9 @@ class MemoryStorageProxy:
 
         return Directory(name, descriptor, parent)
 
-    def create_file(self, n: int, block_n: int, name: str, directory_descriptor: DirectoryDescriptor) -> File:
+    def create_file(self, n: int, name: str, directory_descriptor: DirectoryDescriptor) -> File:
+        block_n = self.get_available_block_n()
+
         descriptor = FileDescriptor(
             n=n,
             size=0,

@@ -16,10 +16,10 @@ from fs.commands.unlink import UnlinkCommand
 from fs.commands.write import WriteCommand
 from fs.manager.parser import parser_factory
 from fs.manager.validate import (
+    validate_filename,
     validate_mkfs,
     validate_read_and_write,
     validate_truncate,
-    validate_filename,
 )
 
 
