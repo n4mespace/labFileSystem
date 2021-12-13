@@ -7,6 +7,7 @@ from constants import (
     N_BLOCKS_MAX,
     N_DESCRIPTORS,
 )
+from fs.commands.close import CloseCommand
 from fs.commands.create import CreateCommand
 from fs.commands.link import LinkCommand
 from fs.commands.mkfs import MkfsCommand
@@ -195,3 +196,29 @@ class FSWorkTests(TestCase):
         )
         self.assertIsInstance(file, FileDescriptor)
         self.assertTrue(file.opened)
+
+    def test_close_file(self) -> None:
+        filename = "file1"
+        CreateCommand(name=filename).exec()
+
+        test_fd = 1000
+
+        # For getting predictable `fd` we should mock `random.randint` result.
+        with mock.patch("random.randint", lambda _x, _y: test_fd):
+            OpenCommand(name=filename).exec()
+
+        command = CloseCommand(fd=str(test_fd))
+        command.exec()
+
+        self.assertFalse(str(test_fd) in command._system_data.get_fd_to_name_mapping())
+
+        file_descriptor = command._system_data.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+            file_descriptor
+        )
+
+        file = command._memory_proxy.get_descriptor(
+            file_descriptor, file_descriptor_blocks
+        )
+        self.assertIsInstance(file, FileDescriptor)
+        self.assertFalse(file.opened)

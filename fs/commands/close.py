@@ -4,7 +4,7 @@ from fs.exceptions import FileDescriptorNotExists, FileNotExists
 
 class CloseCommand(BaseFSCommand):
     def exec(self) -> None:
-        fd = self.kwargs["df"]
+        fd = self.kwargs["fd"]
 
         name = self._system_data.get_descriptor_name(fd)
 
