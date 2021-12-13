@@ -1,12 +1,7 @@
-import unittest.mock as mock
-from unittest import TestCase
+from unittest import TestCase, mock
 
-from constants import (
-    BLOCK_HEADER_SIZE_BYTES,
-    BLOCK_SIZE_BYTES,
-    N_BLOCKS_MAX,
-    N_DESCRIPTORS,
-)
+from constants import (BLOCK_HEADER_SIZE_BYTES, BLOCK_SIZE_BYTES, N_BLOCKS_MAX,
+                       N_DESCRIPTORS)
 from fs.commands.close import CloseCommand
 from fs.commands.create import CreateCommand
 from fs.commands.link import LinkCommand
@@ -15,6 +10,7 @@ from fs.commands.mount import MountCommand
 from fs.commands.open import OpenCommand
 from fs.commands.umount import UmountCommand
 from fs.commands.unlink import UnlinkCommand
+from fs.commands.write import WriteCommand
 from fs.driver.utils import form_header_from_bytes
 from fs.exceptions import FSNotMounted
 from fs.models.descriptor.file import FileDescriptor
@@ -178,7 +174,7 @@ class FSWorkTests(TestCase):
 
         command = OpenCommand(name=filename)
 
-        test_fd = 1000
+        test_fd = 100
 
         # For getting predictable `fd` we should mock `random.randint` result.
         with mock.patch("random.randint", lambda _x, _y: test_fd):
@@ -201,7 +197,7 @@ class FSWorkTests(TestCase):
         filename = "file1"
         CreateCommand(name=filename).exec()
 
-        test_fd = 1000
+        test_fd = 100
 
         # For getting predictable `fd` we should mock `random.randint` result.
         with mock.patch("random.randint", lambda _x, _y: test_fd):
@@ -222,3 +218,32 @@ class FSWorkTests(TestCase):
         )
         self.assertIsInstance(file, FileDescriptor)
         self.assertFalse(file.opened)
+
+    def test_write_file(self) -> None:
+        filename = "file1"
+        CreateCommand(name=filename).exec()
+
+        test_fd = 100
+
+        # For getting predictable `fd` we should mock `random.randint` result.
+        with mock.patch("random.randint", lambda _x, _y: test_fd):
+            OpenCommand(name=filename).exec()
+
+        test_content = "hello_world"
+
+        command = WriteCommand(fd=str(test_fd), offset=0, content=test_content)
+        command.exec()
+
+        file_descriptor = command._system_data.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+            file_descriptor
+        )
+
+        file = command._memory_proxy.get_descriptor(
+            file_descriptor, file_descriptor_blocks
+        )
+        self.assertIsInstance(file, FileDescriptor)
+        self.assertEqual(file.size, len(test_content))
+
+        content = file.read_content(len(test_content), offset=0)
+        self.assertEqual(content, test_content)

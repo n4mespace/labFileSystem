@@ -15,12 +15,9 @@ from fs.commands.umount import UmountCommand
 from fs.commands.unlink import UnlinkCommand
 from fs.commands.write import WriteCommand
 from fs.manager.parser import parser_factory
-from fs.manager.validate import (
-    validate_filename,
-    validate_mkfs,
-    validate_read_and_write,
-    validate_truncate,
-)
+from fs.manager.validate import (validate_filename, validate_mkfs,
+                                 validate_read, validate_truncate,
+                                 validate_write)
 
 
 class FsManager:
@@ -82,16 +79,12 @@ class FsManager:
             self.commands["close"](fd=self.args.close).exec()
 
         elif self.args.read:
-            fd, offset, size = validate_read_and_write(
-                self.args.read, self.parser.error
-            )
+            fd, offset, size = validate_read(self.args.read, self.parser.error)
             self.commands["read"](fd=fd, offset=offset, size=size).exec()
 
         elif self.args.write:
-            fd, offset, size = validate_read_and_write(
-                self.args.write, self.parser.error
-            )
-            self.commands["write"](fd=fd, offset=offset, size=size).exec()
+            fd, offset, content = validate_write(self.args.write, self.parser.error)
+            self.commands["write"](fd=fd, offset=offset, content=content).exec()
 
         elif self.args.link:
             name1, name2 = self.args.link

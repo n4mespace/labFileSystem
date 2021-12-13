@@ -16,7 +16,7 @@ class LsCommand(BaseFSCommand):
         current_directory = self._memory_proxy.get_directory_descriptor(
             ROOT_DESCRIPTOR_N, root_blocks
         )
-        links = current_directory.get_directory_links()
+        links = current_directory.read_directory_links()
 
         output_headers = ["name", "descriptor", "directory", "refs_count", "size"]
         output_info = []

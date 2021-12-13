@@ -15,7 +15,7 @@ class DirectoryDescriptor(Descriptor):
             self.add_block()
             self.blocks[-1].write_link(name, descriptor_id)
 
-    def get_directory_links(self) -> dict:
+    def read_directory_links(self) -> dict:
         links = {}
 
         for block in self.blocks:

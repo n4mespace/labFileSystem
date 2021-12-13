@@ -13,19 +13,29 @@ def validate_mkfs(n: int, error_cb: Callable[[str], None]) -> int:
     return n
 
 
-def validate_read_and_write(
+def validate_read(
     params: tuple[str, str, str], error_cb: Callable[[str], None]
 ) -> tuple[str, int, int]:
     fd, offset, size = params
-    print(params)
 
     if int(offset) < 0:
         error_cb("Cannot use offset less than 0.")
 
-    if int(size) < 0:
-        error_cb("Cannot use size less than 0.")
+    if int(size) <= 0:
+        error_cb("Cannot use size less than 1.")
 
     return fd, int(offset), int(size)
+
+
+def validate_write(
+    params: tuple[str, str, str], error_cb: Callable[[str], None]
+) -> tuple[str, int, str]:
+    fd, offset, content = params
+
+    if int(offset) < 0:
+        error_cb("Cannot use offset less than 0.")
+
+    return fd, int(offset), content
 
 
 def validate_truncate(

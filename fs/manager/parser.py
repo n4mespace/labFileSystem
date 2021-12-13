@@ -69,7 +69,7 @@ def parser_factory() -> ArgumentParser:
         action="store",
         nargs=3,
         type=str,
-        metavar=("fd", "offset", "size"),
+        metavar=("fd", "offset", "data"),
         help="write to a file linked with corresponding `fd`. Use offset and size to adjust writing options.",
     )
     parser.add_argument(

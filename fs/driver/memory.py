@@ -171,6 +171,15 @@ class MemoryStorageProxy:
 
         return descriptor
 
+    def get_file_descriptor(self, n: int, blocks: list[int]) -> FileDescriptor:
+        descriptor = self.get_descriptor(n, blocks)
+
+        if not isinstance(descriptor, FileDescriptor):
+            raise WrongDescriptorClass("Get wrong descriptor class.")
+
+        return descriptor
+
+
     def create_directory(self, n: int, name: str, parent: DirectoryDescriptor,
                          opened: bool = False, root: bool = False) -> Directory:
         block_n = ROOT_BLOCK_N if root else self.get_available_block_n()

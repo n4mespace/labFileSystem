@@ -10,6 +10,9 @@ class Block:
         default_factory=lambda: bytearray(BLOCK_CONTENT_SIZE_BYTES)
     )
 
+    def write_content(self, content: str, offset: int = 0):
+        self.content[offset : offset + len(content)] = [ord(ch) for ch in content]
+
     def write_link(self, name: str, descriptor_id: int) -> None:
         offset = 0
 
@@ -27,9 +30,7 @@ class Block:
                 break
         # TODO: What if not find offset?
 
-        for i, ch in enumerate(name):
-            self.content[offset + i] = ord(ch)
-
+        self.content[offset : offset + len(name)] = [ord(ch) for ch in name]
         self.content[offset + DIRECTORY_MAPPING_BYTES - 1] = descriptor_id
 
     def get_links(self) -> dict:
@@ -74,11 +75,9 @@ class Block:
             link_name = "".join(chr(b) for b in name_bytes if b)
 
             if name == link_name:
-                for i in range(
-                    link_mapping_step, link_mapping_step + DIRECTORY_MAPPING_BYTES
-                ):
-                    self.content[i] = 0
-
+                self.content[
+                    link_mapping_step : link_mapping_step + DIRECTORY_MAPPING_BYTES
+                ] = [0 for _ in range(DIRECTORY_MAPPING_BYTES)]
                 break
 
     def __repr__(self):

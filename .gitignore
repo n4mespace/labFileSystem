@@ -3,3 +3,4 @@
 .pytest_cache
 fake_memory.mem
 system_config.json
+.coverage
