@@ -68,6 +68,10 @@ class SystemConfig:
         with self.config as c:
             return c.name_to_descriptor
 
+    def get_fd_to_name_mapping(self) -> dict[str, str]:
+        with self.config as c:
+            return c.fd_to_name
+
     def get_used_blocks(self) -> list[int]:
         with self.config as c:
             return [

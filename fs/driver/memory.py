@@ -153,7 +153,7 @@ class MemoryStorageProxy:
         descriptor_params = dict(
             n=n,
             size=descriptor_size,
-            opened=False,
+            opened=descriptor_header.opened,
             refs_count=descriptor_header.ref_count,
             blocks=blocks_data,
         )
