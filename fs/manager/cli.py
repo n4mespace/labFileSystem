@@ -49,7 +49,6 @@ class FsManager:
         """
         Branching logic by input action.
         """
-        print(self.args)
 
         if self.args.mkfs > -1:
             n = validate_mkfs(self.args.mkfs, self.parser.error)

@@ -7,7 +7,7 @@ def parser_factory() -> ArgumentParser:
     """
 
     parser = ArgumentParser(
-        description="Basic manipulation with files / directories.",
+        description="Basic manipulation with file system.",
     )
 
     parser.add_argument(
