@@ -6,9 +6,9 @@ class LinkCommand(BaseFSCommand):
         name1, name2 = self.kwargs["name1"], self.kwargs["name2"]
 
         descriptor_id = self._system_state.get_descriptor_id(name1)
-        descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
 
         if descriptor_id:
+            descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
             descriptor = self._memory_proxy.get_descriptor(
                 descriptor_id, descriptor_blocks
             )

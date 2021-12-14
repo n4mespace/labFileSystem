@@ -6,6 +6,7 @@ from _pytest.logging import LogCaptureFixture
 
 from constants import (BLOCK_HEADER_SIZE_BYTES, BLOCK_SIZE_BYTES, N_BLOCKS_MAX,
                        N_DESCRIPTORS)
+from fs.commands.base import BaseFSCommand
 from fs.commands.close import CloseCommand
 from fs.commands.create import CreateCommand
 from fs.commands.link import LinkCommand
@@ -77,16 +78,12 @@ class FSWorkTests(TestCase):
     def inject_fixtures(self, caplog: LogCaptureFixture) -> None:
         self._caplog = caplog
 
-    def test_create_file(self) -> None:
-        filename = "file1"
-        command = CreateCommand(name=filename)
-        command.exec()
-
-        self.assertTrue(
-            filename in command._system_state.get_name_to_descriptor_mapping()
-        )
-
+    def _get_file_descriptor(
+        self, command: BaseFSCommand, filename: str
+    ) -> FileDescriptor:
         file_descriptor = command._system_state.get_descriptor_id(filename)
+        self.assertIsNotNone(file_descriptor)
+
         file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
@@ -96,21 +93,25 @@ class FSWorkTests(TestCase):
         )
         self.assertIsInstance(file, FileDescriptor)
 
+        return file
+
+    def test_create_file(self) -> None:
+        filename = "file1"
+        command = CreateCommand(name=filename)
+        command.exec()
+
+        self.assertTrue(
+            filename in command._system_state.get_name_to_descriptor_mapping()
+        )
+        self._get_file_descriptor(command, filename)
+
     def test_create_n_files(self) -> None:
         for i in range(5):
             filename = f"file_{i}"
             command = CreateCommand(name=filename)
             command.exec()
 
-            file_descriptor = command._system_state.get_descriptor_id(filename)
-            file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-                file_descriptor
-            )
-
-            file = command._memory_proxy.get_descriptor(
-                file_descriptor, file_descriptor_blocks
-            )
-            self.assertIsInstance(file, FileDescriptor)
+            self._get_file_descriptor(command, filename)
 
     def test_ls_files(self) -> None:
         created_files = []
@@ -140,18 +141,10 @@ class FSWorkTests(TestCase):
         command = LinkCommand(name1=filename, name2=link_filename)
         command.exec()
 
-        file_descriptor = command._system_state.get_descriptor_id(filename)
-        file_link_descriptor = command._system_state.get_descriptor_id(link_filename)
+        file = self._get_file_descriptor(command, filename)
+        file_link = self._get_file_descriptor(command, filename)
 
-        self.assertEqual(file_descriptor, file_link_descriptor)
-
-        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            file_descriptor
-        )
-
-        file = command._memory_proxy.get_descriptor(
-            file_descriptor, file_descriptor_blocks
-        )
+        self.assertEqual(file.n, file_link.n)
         self.assertEqual(file.refs_count, 2)
 
     def test_unlink_file(self) -> None:
@@ -168,14 +161,7 @@ class FSWorkTests(TestCase):
             link_filename not in command._system_state.get_name_to_descriptor_mapping()
         )
 
-        file_descriptor = command._system_state.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            file_descriptor
-        )
-
-        file = command._memory_proxy.get_descriptor(
-            file_descriptor, file_descriptor_blocks
-        )
+        file = self._get_file_descriptor(command, filename)
         self.assertEqual(file.refs_count, 1)
 
     def test_delete_file(self) -> None:
@@ -185,6 +171,8 @@ class FSWorkTests(TestCase):
         command = UnlinkCommand(name=filename)
 
         file_descriptor = command._system_state.get_descriptor_id(filename)
+        self.assertIsNotNone(file_descriptor)
+
         file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
@@ -221,15 +209,7 @@ class FSWorkTests(TestCase):
 
         self.assertTrue(str(test_fd) in command._system_state.get_fd_to_name_mapping())
 
-        file_descriptor = command._system_state.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            file_descriptor
-        )
-
-        file = command._memory_proxy.get_descriptor(
-            file_descriptor, file_descriptor_blocks
-        )
-        self.assertIsInstance(file, FileDescriptor)
+        file = self._get_file_descriptor(command, filename)
         self.assertTrue(file.opened)
 
     def test_close_file(self) -> None:
@@ -245,17 +225,7 @@ class FSWorkTests(TestCase):
         command = CloseCommand(fd=str(test_fd))
         command.exec()
 
-        self.assertFalse(str(test_fd) in command._system_state.get_fd_to_name_mapping())
-
-        file_descriptor = command._system_state.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            file_descriptor
-        )
-
-        file = command._memory_proxy.get_descriptor(
-            file_descriptor, file_descriptor_blocks
-        )
-        self.assertIsInstance(file, FileDescriptor)
+        file = self._get_file_descriptor(command, filename)
         self.assertFalse(file.opened)
 
     def test_write_file(self) -> None:
@@ -273,15 +243,7 @@ class FSWorkTests(TestCase):
         command = WriteCommand(fd=str(test_fd), offset=0, content=test_content)
         command.exec()
 
-        file_descriptor = command._system_state.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            file_descriptor
-        )
-
-        file = command._memory_proxy.get_descriptor(
-            file_descriptor, file_descriptor_blocks
-        )
-        self.assertIsInstance(file, FileDescriptor)
+        file = self._get_file_descriptor(command, filename)
         self.assertEqual(file.size, len(test_content))
 
         content = file.read_content(len(test_content), offset=0)
@@ -300,14 +262,8 @@ class FSWorkTests(TestCase):
         command = WriteCommand(fd=str(test_fd), offset=3, content=lorem_ipsum)
         command.exec()
 
-        file_descriptor = command._system_state.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            file_descriptor
-        )
+        file = self._get_file_descriptor(command, filename)
 
-        file = command._memory_proxy.get_descriptor(
-            file_descriptor, file_descriptor_blocks
-        )
         self.assertEqual(file.size, len(lorem_ipsum))
 
         content = file.read_content(len(lorem_ipsum), offset=3)
@@ -330,15 +286,7 @@ class FSWorkTests(TestCase):
         command = TruncateCommand(name=filename, size=test_truncate_size)
         command.exec()
 
-        file_descriptor = command._system_state.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            file_descriptor
-        )
-
-        file = command._memory_proxy.get_descriptor(
-            file_descriptor, file_descriptor_blocks
-        )
-        self.assertEqual(file.size, test_truncate_size)
+        file = self._get_file_descriptor(command, filename)
 
         content = file.read_content(file.size, offset=0)
         self.assertEqual(content, lorem_ipsum[:test_truncate_size])
@@ -360,12 +308,6 @@ class FSWorkTests(TestCase):
         command = TruncateCommand(name=filename, size=test_truncate_size)
         command.exec()
 
-        file_descriptor = command._system_state.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            file_descriptor
-        )
+        file = self._get_file_descriptor(command, filename)
 
-        file = command._memory_proxy.get_descriptor(
-            file_descriptor, file_descriptor_blocks
-        )
         self.assertEqual(file.size, len(lorem_ipsum))

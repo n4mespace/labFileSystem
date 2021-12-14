@@ -68,3 +68,11 @@ class WrongDescriptorClass(Exception):
     """
 
     pass
+
+
+class BlockWriteDenied(Exception):
+    """
+    Something went wrong writing a block to memory.
+    """
+
+    pass

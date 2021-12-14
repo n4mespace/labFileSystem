@@ -36,10 +36,10 @@ def form_header_bytes(header: BlockHeader) -> bytearray:
 def form_header_from_bytes(header_bytes: bytes) -> BlockHeader:
     header = BlockHeader()
 
-    header.directory = header_bytes[BlockHeaderBytes.DIRECTORY]
-    header.used = header_bytes[BlockHeaderBytes.USED]
+    header.directory = bool(header_bytes[BlockHeaderBytes.DIRECTORY])
+    header.used = bool(header_bytes[BlockHeaderBytes.USED])
     header.ref_count = header_bytes[BlockHeaderBytes.REF_COUNT]
     header.size = header_bytes[BlockHeaderBytes.SIZE]
-    header.opened = header_bytes[BlockHeaderBytes.OPENED]
+    header.opened = bool(header_bytes[BlockHeaderBytes.OPENED])
 
     return header

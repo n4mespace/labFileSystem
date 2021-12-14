@@ -20,7 +20,7 @@ class MkfsCommand(BaseFSCommand):
             parent=None,  # noqa: For root dir we hardcode parent link.
             root=True,
         )
-        root.parent = root
+        root.parent = root.descriptor
 
         self._memory_proxy.clear()
         self.save(root.descriptor, ROOT_DIRECTORY_NAME)

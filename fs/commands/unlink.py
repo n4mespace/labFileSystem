@@ -7,11 +7,11 @@ class UnlinkCommand(BaseFSCommand):
         name = self.kwargs["name"]
 
         descriptor_id = self._system_state.get_descriptor_id(name)
-        descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
-
-        root_blocks = self._system_state.get_descriptor_blocks(ROOT_DESCRIPTOR_N)
 
         if descriptor_id:
+            descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
+            root_blocks = self._system_state.get_descriptor_blocks(ROOT_DESCRIPTOR_N)
+
             descriptor = self._memory_proxy.get_descriptor(
                 descriptor_id, descriptor_blocks
             )

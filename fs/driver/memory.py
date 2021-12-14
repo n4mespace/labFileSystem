@@ -7,8 +7,8 @@ from constants import (BLOCK_CONTENT_SIZE_BYTES, BLOCK_HEADER_SIZE_BYTES,
                        BLOCK_SIZE_BYTES, MEMORY_PATH, N_BLOCKS_MAX,
                        ROOT_BLOCK_N)
 from fs.driver.utils import form_header_bytes, form_header_from_bytes
-from fs.exceptions import (FSAlreadyMounted, FSNotMounted, OutOfBlocks,
-                           WrongDescriptorClass)
+from fs.exceptions import (BlockWriteDenied, FSAlreadyMounted, FSNotMounted,
+                           OutOfBlocks, WrongDescriptorClass)
 from fs.models.block import Block
 from fs.models.descriptor.base import Descriptor
 from fs.models.descriptor.directory import Directory, DirectoryDescriptor
@@ -90,6 +90,10 @@ class MemoryStorageProxy:
 
     def write_block(self, block: BlockContent) -> None:
         header_bytes = form_header_bytes(block.header)
+
+        if not self._memory:
+            raise BlockWriteDenied("Something went wrong writing a block to memory.")
+
         self._memory.write(header_bytes + block.content)
 
     def add_ref_count(self, descriptor: Descriptor, c: int) -> int:
