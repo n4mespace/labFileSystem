@@ -2,8 +2,9 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from fs.driver.config import SystemConfig
 from fs.driver.memory import MemoryStorageProxy
+from fs.driver.state import SystemState
+from fs.models.descriptor.base import Descriptor
 
 
 class BaseFSCommand(ABC):
@@ -12,7 +13,7 @@ class BaseFSCommand(ABC):
         self.kwargs = kwargs
 
         self._memory_proxy = MemoryStorageProxy()
-        self._system_data = SystemConfig()
+        self._system_state = SystemState()
 
         self._logger = logging.getLogger(__name__)
 

@@ -6,15 +6,15 @@ from fs.models.utils import BlockHeaderBytes
 
 
 @dataclass
-class DescriptorConfig:
+class DescriptorState:
     n: int
     used: bool = False
     blocks: list[int] = field(default_factory=list)
 
 
 @dataclass
-class Config:
-    descriptors: list[DescriptorConfig] = field(default_factory=list)
+class State:
+    descriptors: list[DescriptorState] = field(default_factory=list)
     name_to_descriptor: dict[str, int] = field(default_factory=dict)
     fd_to_name: dict[str, str] = field(default_factory=dict)
     mounted: bool = False

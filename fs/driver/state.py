@@ -7,19 +7,19 @@ from pathlib import Path
 from typing import Any, Optional
 
 from constants import CONFIG_PATH, FD_GENERATION_RANGE
-from fs.driver.utils import Config, DescriptorConfig
+from fs.driver.utils import DescriptorState, State
 from fs.exceptions import OutOfDescriptors
 from fs.models.descriptor.base import Descriptor
 
 
-class SystemConfig:
+class SystemState:
     def __init__(self) -> None:
         self._config_path = Path(CONFIG_PATH)
-        self._config: Optional[Config] = None
+        self._config: Optional[State] = None
 
     @property
     @contextlib.contextmanager
-    def config(self) -> Generator[Config, Any, Any]:
+    def config(self) -> Generator[State, Any, Any]:
         if not self._config:
             self._config = self._read_config()
 
@@ -28,17 +28,17 @@ class SystemConfig:
         finally:
             self._write_config()
 
-    def _read_config(self) -> Config:
+    def _read_config(self) -> State:
         if self._config_path.exists():
             with open(self._config_path) as f:
                 raw_data = json.load(f)
                 raw_data["descriptors"] = [
-                    DescriptorConfig(**data) for data in raw_data["descriptors"]
+                    DescriptorState(**data) for data in raw_data["descriptors"]
                 ]
 
-                return Config(**raw_data)
+                return State(**raw_data)
 
-        return Config()
+        return State()
 
     def _write_config(self) -> None:
         with open(self._config_path, "w") as f:
@@ -46,11 +46,11 @@ class SystemConfig:
 
     def init_descriptors(self, n: int) -> None:
         with self.config as c:
-            c.descriptors = [DescriptorConfig(i) for i in range(n)]
+            c.descriptors = [DescriptorState(i) for i in range(n)]
 
     def clear_config_file(self) -> None:
         with self.config:
-            self._config = Config()
+            self._config = State()
 
     def set_mounted(self, mounted: bool) -> None:
         with self.config as c:
@@ -82,12 +82,12 @@ class SystemConfig:
         with self.config as c:
             c.descriptors[descriptor_id].blocks.append(block_n)
 
-    def remove_descriptor_from_config(self, descriptor: Descriptor, name: str) -> None:
+    def remove(self, descriptor: Descriptor, name: str) -> None:
         self.unmap_name_from_descriptor(name)
         self.unmap_descriptor_from_blocks(descriptor.n)
         self.set_descriptor_unused(descriptor.n)
 
-    def write_descriptor_to_config(self, descriptor: Descriptor, name: str) -> None:
+    def write(self, descriptor: Descriptor, name: str) -> None:
         self.map_name_to_descriptor(name, descriptor.n)
         self.map_descriptor_to_blocks(
             descriptor.n, [block.n for block in descriptor.blocks]

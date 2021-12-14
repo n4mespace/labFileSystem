@@ -179,7 +179,6 @@ class MemoryStorageProxy:
 
         return descriptor
 
-
     def create_directory(self, n: int, name: str, parent: DirectoryDescriptor,
                          opened: bool = False, root: bool = False) -> Directory:
         block_n = ROOT_BLOCK_N if root else self.get_available_block_n()

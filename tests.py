@@ -8,6 +8,7 @@ from fs.commands.link import LinkCommand
 from fs.commands.mkfs import MkfsCommand
 from fs.commands.mount import MountCommand
 from fs.commands.open import OpenCommand
+from fs.commands.truncate import TruncateCommand
 from fs.commands.umount import UmountCommand
 from fs.commands.unlink import UnlinkCommand
 from fs.commands.write import WriteCommand
@@ -64,11 +65,11 @@ class FSWorkTests(TestCase):
         command.exec()
 
         self.assertTrue(
-            filename in command._system_data.get_name_to_descriptor_mapping()
+            filename in command._system_state.get_name_to_descriptor_mapping()
         )
 
-        file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
 
@@ -83,8 +84,8 @@ class FSWorkTests(TestCase):
             command = CreateCommand(name=filename)
             command.exec()
 
-            file_descriptor = command._system_data.get_descriptor_id(filename)
-            file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+            file_descriptor = command._system_state.get_descriptor_id(filename)
+            file_descriptor_blocks = command._system_state.get_descriptor_blocks(
                 file_descriptor
             )
 
@@ -101,12 +102,12 @@ class FSWorkTests(TestCase):
         command = LinkCommand(name1=filename, name2=link_filename)
         command.exec()
 
-        file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_link_descriptor = command._system_data.get_descriptor_id(link_filename)
+        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_link_descriptor = command._system_state.get_descriptor_id(link_filename)
 
         self.assertEqual(file_descriptor, file_link_descriptor)
 
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
 
@@ -126,11 +127,11 @@ class FSWorkTests(TestCase):
         command.exec()
 
         self.assertTrue(
-            link_filename not in command._system_data.get_name_to_descriptor_mapping()
+            link_filename not in command._system_state.get_name_to_descriptor_mapping()
         )
 
-        file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
 
@@ -145,8 +146,8 @@ class FSWorkTests(TestCase):
 
         command = UnlinkCommand(name=filename)
 
-        file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
 
@@ -180,10 +181,10 @@ class FSWorkTests(TestCase):
         with mock.patch("random.randint", lambda _x, _y: test_fd):
             command.exec()
 
-        self.assertTrue(str(test_fd) in command._system_data.get_fd_to_name_mapping())
+        self.assertTrue(str(test_fd) in command._system_state.get_fd_to_name_mapping())
 
-        file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
 
@@ -206,10 +207,10 @@ class FSWorkTests(TestCase):
         command = CloseCommand(fd=str(test_fd))
         command.exec()
 
-        self.assertFalse(str(test_fd) in command._system_data.get_fd_to_name_mapping())
+        self.assertFalse(str(test_fd) in command._system_state.get_fd_to_name_mapping())
 
-        file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
 
@@ -234,8 +235,8 @@ class FSWorkTests(TestCase):
         command = WriteCommand(fd=str(test_fd), offset=0, content=test_content)
         command.exec()
 
-        file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
 
@@ -270,8 +271,8 @@ class FSWorkTests(TestCase):
         command = WriteCommand(fd=str(test_fd), offset=3, content=test_content)
         command.exec()
 
-        file_descriptor = command._system_data.get_descriptor_id(filename)
-        file_descriptor_blocks = command._system_data.get_descriptor_blocks(
+        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
             file_descriptor
         )
 
@@ -282,3 +283,42 @@ class FSWorkTests(TestCase):
 
         content = file.read_content(len(test_content), offset=3)
         self.assertEqual(content, test_content)
+
+    def test_truncate_size_down_file(self) -> None:
+        filename = "file1"
+        CreateCommand(name=filename).exec()
+
+        test_fd = 100
+
+        # For getting predictable `fd` we should mock `random.randint` result.
+        with mock.patch("random.randint", lambda _x, _y: test_fd):
+            OpenCommand(name=filename).exec()
+
+        test_content = (
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
+            "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, "
+            "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
+            "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu "
+            "fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa "
+            "qui officia deserunt mollit anim id est laborum."
+        )
+
+        WriteCommand(fd=str(test_fd), offset=0, content=test_content).exec()
+
+        test_truncate_size = len(test_content) // 2
+
+        command = TruncateCommand(name=filename, size=test_truncate_size)
+        command.exec()
+
+        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
+            file_descriptor
+        )
+
+        file = command._memory_proxy.get_descriptor(
+            file_descriptor, file_descriptor_blocks
+        )
+        self.assertEqual(file.size, test_truncate_size)
+
+        content = file.read_content(file.size, offset=0)
+        self.assertEqual(content, test_content[:test_truncate_size])
