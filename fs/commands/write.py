@@ -30,9 +30,7 @@ class WriteCommand(BaseFSCommand):
         descriptor.write_content(content, offset)
         descriptor.update_size()
 
-        self._memory_proxy.write(descriptor)
-        self._system_state.write(descriptor, name)
-
+        self.save(descriptor, name)
         self._logger.info(
             f"Successfully written `{content}` to [{name}] with fd [{fd}]."
         )

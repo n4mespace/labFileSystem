@@ -7,6 +7,14 @@ from fs.models.descriptor.directory import DirectoryDescriptor
 
 
 class LsCommand(BaseFSCommand):
+    output_headers: list[str] = [
+        "name",
+        "descriptor",
+        "directory",
+        "refs_count",
+        "size",
+    ]
+
     def exec(self) -> None:
         if not self._system_state.check_system_formatted():
             raise FSNotFormatted("Can't perform actions on not formatted fs.")
@@ -18,7 +26,6 @@ class LsCommand(BaseFSCommand):
         )
         links = current_directory.read_directory_links()
 
-        output_headers = ["name", "descriptor", "directory", "refs_count", "size"]
         output_info = []
 
         for name, descriptor_id in links.items():
@@ -55,4 +62,4 @@ class LsCommand(BaseFSCommand):
                     ]
                 )
 
-        self._logger.info("\n" + tabulate(output_info, headers=output_headers))
+        self._logger.info("\n" + tabulate(output_info, headers=self.output_headers))

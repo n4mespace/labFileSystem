@@ -23,9 +23,7 @@ class TruncateCommand(BaseFSCommand):
 
         descriptor.update_size()
 
-        self._memory_proxy.write(descriptor)
-        self._system_state.write(descriptor, name)
-
+        self.save(descriptor, name)
         self._logger.info(
             f"Successfully changed [{name}] size from [{old_size}] to [{size}]."
         )

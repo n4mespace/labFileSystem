@@ -20,3 +20,7 @@ class BaseFSCommand(ABC):
     @abstractmethod
     def exec(self) -> None:
         raise NotImplementedError("Command must implement its exec method.")
+
+    def save(self, descriptor: Descriptor, name: str) -> None:
+        self._memory_proxy.write(descriptor)
+        self._system_state.write(descriptor, name)

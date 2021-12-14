@@ -25,7 +25,5 @@ class CloseCommand(BaseFSCommand):
         descriptor = self._memory_proxy.get_descriptor(descriptor_id, descriptor_blocks)
         descriptor.opened = False
 
-        self._memory_proxy.write(descriptor)
-        self._system_state.write(descriptor, name)
-
+        self.save(descriptor, name)
         self._logger.info(f"Successfully closed file [{name}] with fd [{fd}].")

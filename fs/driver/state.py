@@ -15,20 +15,20 @@ from fs.models.descriptor.base import Descriptor
 class SystemState:
     def __init__(self) -> None:
         self._config_path = Path(CONFIG_PATH)
-        self._config: Optional[State] = None
+        self._state: Optional[State] = None
 
     @property
     @contextlib.contextmanager
-    def config(self) -> Generator[State, Any, Any]:
-        if not self._config:
-            self._config = self._read_config()
+    def state(self) -> Generator[State, Any, Any]:
+        if not self._state:
+            self._state = self._read_state()
 
         try:
-            yield self._config
+            yield self._state
         finally:
-            self._write_config()
+            self._write_state()
 
-    def _read_config(self) -> State:
+    def _read_state(self) -> State:
         if self._config_path.exists():
             with open(self._config_path) as f:
                 raw_data = json.load(f)
@@ -40,46 +40,40 @@ class SystemState:
 
         return State()
 
-    def _write_config(self) -> None:
+    def _write_state(self) -> None:
         with open(self._config_path, "w") as f:
-            json.dump(asdict(self._config), f, indent=2)
+            json.dump(asdict(self._state), f, indent=2)
 
     def init_descriptors(self, n: int) -> None:
-        with self.config as c:
+        with self.state as c:
             c.descriptors = [DescriptorState(i) for i in range(n)]
 
     def clear_config_file(self) -> None:
-        with self.config:
-            self._config = State()
+        with self.state:
+            self._state = State()
 
     def set_mounted(self, mounted: bool) -> None:
-        with self.config as c:
+        with self.state as c:
             c.mounted = mounted
 
     def check_mounted(self) -> bool:
-        with self.config as c:
+        with self.state as c:
             return c.mounted
 
     def check_name_exists(self, name: str) -> bool:
-        with self.config as c:
+        with self.state as c:
             return name in c.name_to_descriptor
 
     def get_name_to_descriptor_mapping(self) -> dict[str, int]:
-        with self.config as c:
+        with self.state as c:
             return c.name_to_descriptor
 
     def get_fd_to_name_mapping(self) -> dict[str, str]:
-        with self.config as c:
+        with self.state as c:
             return c.fd_to_name
 
-    def get_used_blocks(self) -> list[int]:
-        with self.config as c:
-            return [
-                block for descriptor in c.descriptors for block in descriptor.blocks
-            ]
-
     def add_block_to_descriptor(self, descriptor_id: int, block_n: int) -> None:
-        with self.config as c:
+        with self.state as c:
             c.descriptors[descriptor_id].blocks.append(block_n)
 
     def remove(self, descriptor: Descriptor, name: str) -> None:
@@ -95,24 +89,24 @@ class SystemState:
         self.set_descriptor_used(descriptor.n)
 
     def map_descriptor_to_blocks(self, descriptor_id: int, blocks: list[int]) -> None:
-        with self.config as c:
+        with self.state as c:
             c.descriptors[descriptor_id].blocks = blocks
 
     def map_name_to_descriptor(self, name: str, descriptor_id: int) -> None:
-        with self.config as c:
+        with self.state as c:
             c.name_to_descriptor[name] = descriptor_id
 
     def unmap_descriptor_from_blocks(self, descriptor_id: int) -> None:
-        with self.config as c:
+        with self.state as c:
             c.descriptors[descriptor_id].blocks = []
             c.descriptors[descriptor_id].used = False
 
     def unmap_name_from_descriptor(self, name: str) -> None:
-        with self.config as c:
+        with self.state as c:
             c.name_to_descriptor.pop(name)
 
     def _set_descriptor_use(self, n: int, used: bool) -> None:
-        with self.config as c:
+        with self.state as c:
             c.descriptors[n].used = used
 
     def set_descriptor_used(self, n: int) -> None:
@@ -122,11 +116,11 @@ class SystemState:
         self._set_descriptor_use(n, used=False)
 
     def check_for_descriptor(self, descriptor_id: int) -> bool:
-        with self.config as c:
+        with self.state as c:
             return c.descriptors[descriptor_id].used
 
     def get_new_descriptor_id(self) -> int:
-        with self.config as c:
+        with self.state as c:
             available_descriptors = [
                 descriptor for descriptor in c.descriptors if not descriptor.used
             ]
@@ -139,29 +133,33 @@ class SystemState:
             return descriptor.n
 
     def get_descriptor_blocks(self, descriptor_id: int) -> list[int]:
-        with self.config as c:
+        with self.state as c:
             return c.descriptors[descriptor_id].blocks
 
     def get_descriptor_id(self, name: str) -> Optional[int]:
-        with self.config as c:
+        with self.state as c:
             return c.name_to_descriptor.get(name)
 
     def get_descriptor_name(self, fd: str) -> Optional[str]:
-        with self.config as c:
+        with self.state as c:
             return c.fd_to_name.get(fd)
 
     def map_file_to_fd(self, name: str) -> str:
         fd = str(random.randint(*FD_GENERATION_RANGE))
 
-        with self.config as c:
+        with self.state as c:
             c.fd_to_name[fd] = name
 
         return fd
 
     def unmap_fd_from_name(self, fd: str) -> None:
-        with self.config as c:
+        with self.state as c:
             c.fd_to_name.pop(fd)
 
     def check_system_formatted(self) -> bool:
-        with self.config as c:
+        with self.state as c:
             return bool(c.descriptors)
+
+    def get_cwd_name(self) -> str:
+        with self.state as c:
+            return c.cwd

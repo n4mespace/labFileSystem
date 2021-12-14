@@ -1,4 +1,4 @@
-from constants import N_BLOCKS_MAX, ROOT_DESCRIPTOR_N
+from constants import N_BLOCKS_MAX, ROOT_DESCRIPTOR_N, ROOT_DIRECTORY_NAME
 from fs.commands.base import BaseFSCommand
 from fs.exceptions import FSNotMounted
 
@@ -15,17 +15,15 @@ class MkfsCommand(BaseFSCommand):
         self._system_state.init_descriptors(n)
         root = self._memory_proxy.create_directory(
             n=ROOT_DESCRIPTOR_N,
-            name="",
+            name=ROOT_DIRECTORY_NAME,
             opened=True,
             parent=None,  # noqa: For root dir we hardcode parent link.
             root=True,
         )
         root.parent = root
 
-        self._system_state.write(root.descriptor, name="")
-
         self._memory_proxy.clear()
-        self._memory_proxy.write(root.descriptor)
+        self.save(root.descriptor, ROOT_DIRECTORY_NAME)
         self._memory_proxy.write_empty_blocks(N_BLOCKS_MAX, start_from=1)
 
         self._logger.info("Successfully formatted.")

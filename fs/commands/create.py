@@ -24,7 +24,5 @@ class CreateCommand(BaseFSCommand):
             name=name,
         )
 
-        self._system_state.write(file.descriptor, name)
-
-        self._memory_proxy.write(file.descriptor)
-        self._memory_proxy.write(current_directory_descriptor)
+        self.save(file.descriptor, name)
+        self.save(current_directory_descriptor, self._system_state.get_cwd_name())

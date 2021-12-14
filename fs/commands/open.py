@@ -17,6 +17,6 @@ class OpenCommand(BaseFSCommand):
 
         descriptor = self._memory_proxy.get_descriptor(descriptor_id, descriptor_blocks)
         descriptor.opened = True
-        self._memory_proxy.write(descriptor)
 
+        self.save(descriptor, name)
         self._logger.info(f"Successfully opened file [{name}] with fd [{fd}].")
