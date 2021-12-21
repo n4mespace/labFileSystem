@@ -4,3 +4,4 @@
 fake_memory.mem
 system_config.json
 .coverage
+*.docx

@@ -36,7 +36,6 @@ class Descriptor:
             for _ in range(blocks_to_change + 1):
                 if len(self.blocks) > 1:
                     blocks_deleted.append(self.blocks.pop(-1))
-                break
 
             self.blocks[-1].write_content(empty_content, offset=block_offset)
 

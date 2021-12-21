@@ -28,7 +28,6 @@ class Block:
             if not any(mapping_bytes):
                 offset = link_mapping_step
                 break
-        # TODO: What if not find offset?
 
         self.content[offset : offset + len(name)] = [ord(ch) for ch in name]
         self.content[offset + DIRECTORY_MAPPING_BYTES - 1] = descriptor_id
