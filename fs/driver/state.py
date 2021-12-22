@@ -45,69 +45,69 @@ class SystemState:
             json.dump(asdict(self._state), f, indent=2)
 
     def init_descriptors(self, n: int) -> None:
-        with self.state as c:
-            c.descriptors = [DescriptorState(i) for i in range(n)]
+        with self.state as s:
+            s.descriptors = [DescriptorState(i) for i in range(n)]
 
     def clear_config_file(self) -> None:
         with self.state:
             self._state = State()
 
     def set_mounted(self, mounted: bool) -> None:
-        with self.state as c:
-            c.mounted = mounted
+        with self.state as s:
+            s.mounted = mounted
 
     def check_mounted(self) -> bool:
-        with self.state as c:
-            return c.mounted
+        with self.state as s:
+            return s.mounted
 
-    def check_name_exists(self, name: str) -> bool:
-        with self.state as c:
-            return name in c.name_to_descriptor
+    def check_path_exists(self, path: str) -> bool:
+        with self.state as s:
+            return path in s.path_to_descriptor
 
-    def get_name_to_descriptor_mapping(self) -> dict[str, int]:
-        with self.state as c:
-            return c.name_to_descriptor
+    def get_path_to_descriptor_mapping(self) -> dict[str, int]:
+        with self.state as s:
+            return s.path_to_descriptor
 
-    def get_fd_to_name_mapping(self) -> dict[str, str]:
-        with self.state as c:
-            return c.fd_to_name
+    def get_fd_to_path_mapping(self) -> dict[str, str]:
+        with self.state as s:
+            return s.fd_to_path
 
     def add_block_to_descriptor(self, descriptor_id: int, block_n: int) -> None:
-        with self.state as c:
-            c.descriptors[descriptor_id].blocks.append(block_n)
+        with self.state as s:
+            s.descriptors[descriptor_id].blocks.append(block_n)
 
-    def remove(self, descriptor: Descriptor, name: str) -> None:
-        self.unmap_name_from_descriptor(name)
+    def remove(self, descriptor: Descriptor, path: str) -> None:
+        self.unmap_path_from_descriptor(path)
         self.unmap_descriptor_from_blocks(descriptor.n)
         self.set_descriptor_unused(descriptor.n)
 
-    def write(self, descriptor: Descriptor, name: str) -> None:
-        self.map_name_to_descriptor(name, descriptor.n)
+    def write(self, descriptor: Descriptor, path: str) -> None:
+        self.map_path_to_descriptor(path, descriptor.n)
         self.map_descriptor_to_blocks(
             descriptor.n, [block.n for block in descriptor.blocks]
         )
         self.set_descriptor_used(descriptor.n)
 
     def map_descriptor_to_blocks(self, descriptor_id: int, blocks: list[int]) -> None:
-        with self.state as c:
-            c.descriptors[descriptor_id].blocks = blocks
+        with self.state as s:
+            s.descriptors[descriptor_id].blocks = blocks
 
-    def map_name_to_descriptor(self, name: str, descriptor_id: int) -> None:
-        with self.state as c:
-            c.name_to_descriptor[name] = descriptor_id
+    def map_path_to_descriptor(self, path: str, descriptor_id: int) -> None:
+        with self.state as s:
+            s.path_to_descriptor[path] = descriptor_id
 
     def unmap_descriptor_from_blocks(self, descriptor_id: int) -> None:
-        with self.state as c:
-            c.descriptors[descriptor_id].blocks = []
-            c.descriptors[descriptor_id].used = False
+        with self.state as s:
+            s.descriptors[descriptor_id].blocks = []
+            s.descriptors[descriptor_id].used = False
 
-    def unmap_name_from_descriptor(self, name: str) -> None:
-        with self.state as c:
-            c.name_to_descriptor.pop(name)
+    def unmap_path_from_descriptor(self, path: str) -> None:
+        with self.state as s:
+            s.path_to_descriptor.pop(path)
 
     def _set_descriptor_use(self, n: int, used: bool) -> None:
-        with self.state as c:
-            c.descriptors[n].used = used
+        with self.state as s:
+            s.descriptors[n].used = used
 
     def set_descriptor_used(self, n: int) -> None:
         self._set_descriptor_use(n, used=True)
@@ -116,13 +116,13 @@ class SystemState:
         self._set_descriptor_use(n, used=False)
 
     def check_for_descriptor(self, descriptor_id: int) -> bool:
-        with self.state as c:
-            return c.descriptors[descriptor_id].used
+        with self.state as s:
+            return s.descriptors[descriptor_id].used
 
     def get_new_descriptor_id(self) -> int:
-        with self.state as c:
+        with self.state as s:
             available_descriptors = [
-                descriptor for descriptor in c.descriptors if not descriptor.used
+                descriptor for descriptor in s.descriptors if not descriptor.used
             ]
 
         try:
@@ -133,33 +133,33 @@ class SystemState:
             return descriptor.n
 
     def get_descriptor_blocks(self, descriptor_id: int) -> list[int]:
-        with self.state as c:
-            return c.descriptors[descriptor_id].blocks
+        with self.state as s:
+            return s.descriptors[descriptor_id].blocks
 
-    def get_descriptor_id(self, name: str) -> Optional[int]:
-        with self.state as c:
-            return c.name_to_descriptor.get(name)
+    def get_descriptor_id(self, path: str) -> Optional[int]:
+        with self.state as s:
+            return s.path_to_descriptor.get(path)
 
-    def get_descriptor_name(self, fd: str) -> Optional[str]:
-        with self.state as c:
-            return c.fd_to_name.get(fd)
+    def get_descriptor_path(self, fd: str) -> Optional[str]:
+        with self.state as s:
+            return s.fd_to_path.get(fd)
 
-    def map_file_to_fd(self, name: str) -> str:
+    def map_filepath_to_fd(self, filepath: str) -> str:
         fd = str(random.randint(*FD_GENERATION_RANGE))
 
-        with self.state as c:
-            c.fd_to_name[fd] = name
+        with self.state as s:
+            s.fd_to_path[fd] = filepath
 
         return fd
 
-    def unmap_fd_from_name(self, fd: str) -> None:
-        with self.state as c:
-            c.fd_to_name.pop(fd)
+    def unmap_fd_from_path(self, fd: str) -> None:
+        with self.state as s:
+            s.fd_to_path.pop(fd)
 
     def check_system_formatted(self) -> bool:
-        with self.state as c:
-            return bool(c.descriptors)
+        with self.state as s:
+            return bool(s.descriptors)
 
     def get_cwd_name(self) -> str:
-        with self.state as c:
-            return c.cwd
+        with self.state as s:
+            return s.cwd

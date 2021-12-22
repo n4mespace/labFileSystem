@@ -4,12 +4,12 @@ from fs.exceptions import FileNotExists
 
 class TruncateCommand(BaseFSCommand):
     def exec(self) -> None:
-        name, size = self.kwargs["name"], self.kwargs["size"]
+        path, size = self.kwargs["path"], self.kwargs["size"]
 
-        descriptor_id = self._system_state.get_descriptor_id(name)
+        descriptor_id = self._system_state.get_descriptor_id(path)
 
         if not descriptor_id:
-            raise FileNotExists("Can't find file with such a name.")
+            raise FileNotExists("Can't find file with such a path.")
 
         descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
         descriptor = self._memory_proxy.get_descriptor(descriptor_id, descriptor_blocks)
@@ -23,7 +23,7 @@ class TruncateCommand(BaseFSCommand):
 
         descriptor.update_size()
 
-        self.save(descriptor, name)
+        self.save(descriptor, path)
         self._logger.info(
-            f"Successfully changed [{name}] size from [{old_size}] to [{size}]."
+            f"Successfully changed [{path}] size from [{old_size}] to [{size}]."
         )

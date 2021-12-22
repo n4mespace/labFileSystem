@@ -10,17 +10,17 @@ class WriteCommand(BaseFSCommand):
             self.kwargs["content"],
         )
 
-        name = self._system_state.get_descriptor_name(fd)
+        path = self._system_state.get_descriptor_path(fd)
 
-        if not name:
+        if not path:
             raise FileDescriptorNotExists(
                 "Can't find file with such a file descriptor."
             )
 
-        descriptor_id = self._system_state.get_descriptor_id(name)
+        descriptor_id = self._system_state.get_descriptor_id(path)
 
         if not descriptor_id:
-            raise FileNotExists("Can't find file with such a name.")
+            raise FileNotExists("Can't find file with such a path.")
 
         descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
 
@@ -30,7 +30,7 @@ class WriteCommand(BaseFSCommand):
         descriptor.write_content(content, offset)
         descriptor.update_size()
 
-        self.save(descriptor, name)
+        self.save(descriptor, path)
         self._logger.info(
-            f"Successfully written `{content}` to [{name}] with fd [{fd}]."
+            f"Successfully written `{content}` to [{path}] with fd [{fd}]."
         )

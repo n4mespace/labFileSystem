@@ -39,14 +39,14 @@ def parser_factory() -> ArgumentParser:
         "--create",
         action="store",
         type=str,
-        metavar="name",
+        metavar="path",
         help="create a file, link it to `name`.",
     )
     parser.add_argument(
         "--open",
         action="store",
         type=str,
-        metavar="name",
+        metavar="path",
         help="open a file linked with `name`, assign `fd`.",
     )
     parser.add_argument(
@@ -77,14 +77,14 @@ def parser_factory() -> ArgumentParser:
         action="store",
         nargs=2,
         type=str,
-        metavar=("name1", "name2"),
-        help="link `name2` with a file which `name1` links.",
+        metavar=("path1", "path2"),
+        help="link `path2` with a file which `path1` links.",
     )
     parser.add_argument(
         "--unlink",
         action="store",
         type=str,
-        metavar="name",
+        metavar="path",
         help="unlink `name` from a file.",
     )
     parser.add_argument(
@@ -92,8 +92,37 @@ def parser_factory() -> ArgumentParser:
         action="store",
         nargs=2,
         type=str,
-        metavar=("name", "size"),
+        metavar=("path", "size"),
         help="change size of a file which `name` links to `size`.",
+    )
+    parser.add_argument(
+        "--mkdir",
+        action="store",
+        type=str,
+        metavar="path",
+        help="create new directory.",
+    )
+    parser.add_argument(
+        "--rmdir",
+        action="store",
+        type=str,
+        metavar="path",
+        help="delete empty directory.",
+    )
+    parser.add_argument(
+        "--cd",
+        action="store",
+        type=str,
+        metavar="path",
+        help="change current working dir.",
+    )
+    parser.add_argument(
+        "--symlink",
+        action="store",
+        nargs=2,
+        type=str,
+        metavar=("content", "path"),
+        help="create symlink with `content` inside.",
     )
 
     return parser

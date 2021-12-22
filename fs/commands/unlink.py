@@ -4,9 +4,9 @@ from fs.commands.base import BaseFSCommand
 
 class UnlinkCommand(BaseFSCommand):
     def exec(self) -> None:
-        name = self.kwargs["name"]
+        path = self.kwargs["path"]
 
-        descriptor_id = self._system_state.get_descriptor_id(name)
+        descriptor_id = self._system_state.get_descriptor_id(path)
 
         if descriptor_id:
             descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
@@ -23,16 +23,16 @@ class UnlinkCommand(BaseFSCommand):
                         ROOT_DESCRIPTOR_N, root_blocks
                     )
                 )
-                current_directory_descriptor.remove_directory_link(name)
+                current_directory_descriptor.remove_directory_link(path)
 
                 self._memory_proxy.write(current_directory_descriptor)
-                self._system_state.remove(descriptor, name)
+                self._system_state.remove(descriptor, path)
 
             else:
-                self._system_state.unmap_name_from_descriptor(name)
+                self._system_state.unmap_path_from_descriptor(path)
 
             self._logger.info(
-                f"Successfully unlinked `{name}` with descriptor `{descriptor_id}`."
+                f"Successfully unlinked `{path}` with descriptor `{descriptor_id}`."
             )
         else:
-            self._logger.info(f"Can't delete symlink for non existing file `{name}`.")
+            self._logger.info(f"Can't delete symlink for non existing file `{path}`.")

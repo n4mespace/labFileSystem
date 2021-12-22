@@ -47,7 +47,7 @@ class LsCommand(BaseFSCommand):
             # Add also symlinks.
             symlinks = [
                 link
-                for link, descriptor in self._system_state.get_name_to_descriptor_mapping().items()
+                for link, descriptor in self._system_state.get_path_to_descriptor_mapping().items()
                 if link and descriptor == descriptor_id and name != link
             ]
 

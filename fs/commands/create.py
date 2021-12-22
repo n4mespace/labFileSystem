@@ -5,9 +5,9 @@ from fs.exceptions import FileAlreadyExists
 
 class CreateCommand(BaseFSCommand):
     def exec(self) -> None:
-        name = self.kwargs["name"]
+        path = self.kwargs["path"]
 
-        if self._system_state.check_name_exists(name):
+        if self._system_state.check_path_exists(path):
             raise FileAlreadyExists(
                 "Can't create new file with name of already existing one."
             )
@@ -24,5 +24,5 @@ class CreateCommand(BaseFSCommand):
             name=name,
         )
 
-        self.save(file.descriptor, name)
+        self.save(file.descriptor, path)
         self.save(current_directory_descriptor, self._system_state.get_cwd_name())

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from constants import BLOCK_HEADER_SIZE_BYTES, ROOT_DIRECTORY_NAME
+from constants import BLOCK_HEADER_SIZE_BYTES, ROOT_DIRECTORY_PATH
 from fs.models.raw import BlockHeader
 from fs.models.utils import BlockHeaderBytes
 
@@ -15,9 +15,9 @@ class DescriptorState:
 @dataclass
 class State:
     descriptors: list[DescriptorState] = field(default_factory=list)
-    name_to_descriptor: dict[str, int] = field(default_factory=dict)
-    fd_to_name: dict[str, str] = field(default_factory=dict)
-    cwd: str = ROOT_DIRECTORY_NAME
+    path_to_descriptor: dict[str, int] = field(default_factory=dict)
+    fd_to_path: dict[str, str] = field(default_factory=dict)
+    cwd: str = ROOT_DIRECTORY_PATH
     mounted: bool = False
 
 

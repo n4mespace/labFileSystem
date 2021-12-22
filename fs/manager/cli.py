@@ -1,22 +1,26 @@
 from typing import Type
 
 from fs.commands.base import BaseFSCommand
+from fs.commands.cd import CdCommand
 from fs.commands.close import CloseCommand
 from fs.commands.create import CreateCommand
 from fs.commands.fstat import FstatCommand
 from fs.commands.link import LinkCommand
 from fs.commands.ls import LsCommand
+from fs.commands.mkdir import MkdirCommand
 from fs.commands.mkfs import MkfsCommand
 from fs.commands.mount import MountCommand
 from fs.commands.open import OpenCommand
 from fs.commands.read import ReadCommand
+from fs.commands.rmdir import RmdirCommand
+from fs.commands.symlink import SymlinkCommand
 from fs.commands.truncate import TruncateCommand
 from fs.commands.umount import UmountCommand
 from fs.commands.unlink import UnlinkCommand
 from fs.commands.write import WriteCommand
 from fs.manager.parser import parser_factory
-from fs.manager.validate import (validate_filename, validate_mkfs,
-                                 validate_read, validate_truncate,
+from fs.manager.validate import (validate_mkfs, validate_path, validate_read,
+                                 validate_symlink, validate_truncate,
                                  validate_write)
 
 
@@ -39,6 +43,10 @@ class FsManager:
         "link": LinkCommand,
         "unlink": UnlinkCommand,
         "truncate": TruncateCommand,
+        "mkdir": MkdirCommand,
+        "rmdir": RmdirCommand,
+        "cd": CdCommand,
+        "symlink": SymlinkCommand,
     }
 
     def __init__(self) -> None:
@@ -67,12 +75,12 @@ class FsManager:
             self.commands["ls"]().exec()
 
         elif self.args.create:
-            filename = validate_filename(self.args.create, self.parser.error)
-            self.commands["create"](name=filename).exec()
+            filepath = validate_path(self.args.create, self.parser.error)
+            self.commands["create"](path=filepath).exec()
 
         elif self.args.open:
-            filename = validate_filename(self.args.open, self.parser.error)
-            self.commands["open"](name=filename).exec()
+            filepath = validate_path(self.args.open, self.parser.error)
+            self.commands["open"](path=filepath).exec()
 
         elif self.args.close:
             self.commands["close"](fd=self.args.close).exec()
@@ -86,12 +94,25 @@ class FsManager:
             self.commands["write"](fd=fd, offset=offset, content=content).exec()
 
         elif self.args.link:
-            name1, name2 = self.args.link
-            self.commands["link"](name1=name1, name2=name2).exec()
+            path1, path2 = self.args.link
+            self.commands["link"](path1=path1, path2=path2).exec()
 
         elif self.args.unlink:
-            self.commands["unlink"](name=self.args.unlink).exec()
+            self.commands["unlink"](path=self.args.unlink).exec()
 
         elif self.args.truncate:
-            name, size = validate_truncate(self.args.truncate, self.parser.error)
-            self.commands["truncate"](name=name, size=size).exec()
+            path, size = validate_truncate(self.args.truncate, self.parser.error)
+            self.commands["truncate"](path=path, size=size).exec()
+
+        elif self.args.mkdir:
+            self.commands["mkdir"](path=self.args.mkdir).exec()
+
+        elif self.args.rmdir:
+            self.commands["rmdir"](path=self.args.rmdir).exec()
+
+        elif self.args.cd:
+            self.commands["cd"](path=self.args.cd).exec()
+
+        elif self.args.symlink:
+            content, path = validate_symlink(self.args.symlink, self.parser.error)
+            self.commands["symlink"](content=content, path=path).exec()

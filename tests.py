@@ -63,7 +63,7 @@ class FSInitializationTests(TestCase):
             self.assertEqual(len(m.read()), BLOCK_SIZE_BYTES * N_BLOCKS_MAX)
 
 
-class FSWorkTests(TestCase):
+class FSWorkLab2Tests(TestCase):
     def setUp(self) -> None:
         try:
             UmountCommand().exec()
@@ -101,7 +101,7 @@ class FSWorkTests(TestCase):
         command.exec()
 
         self.assertTrue(
-            filename in command._system_state.get_name_to_descriptor_mapping()
+            filename in command._system_state.get_path_to_descriptor_mapping()
         )
         self._get_file_descriptor(command, filename)
 
@@ -158,7 +158,7 @@ class FSWorkTests(TestCase):
         command.exec()
 
         self.assertTrue(
-            link_filename not in command._system_state.get_name_to_descriptor_mapping()
+            link_filename not in command._system_state.get_path_to_descriptor_mapping()
         )
 
         file = self._get_file_descriptor(command, filename)
@@ -207,7 +207,7 @@ class FSWorkTests(TestCase):
         with mock.patch("random.randint", lambda _x, _y: test_fd):
             command.exec()
 
-        self.assertTrue(str(test_fd) in command._system_state.get_fd_to_name_mapping())
+        self.assertTrue(str(test_fd) in command._system_state.get_fd_to_path_mapping())
 
         file = self._get_file_descriptor(command, filename)
         self.assertTrue(file.opened)

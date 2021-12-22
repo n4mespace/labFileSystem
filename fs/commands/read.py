@@ -6,14 +6,14 @@ class ReadCommand(BaseFSCommand):
     def exec(self) -> None:
         fd, offset, size = self.kwargs["fd"], self.kwargs["offset"], self.kwargs["size"]
 
-        name = self._system_state.get_descriptor_name(fd)
+        path = self._system_state.get_descriptor_path(fd)
 
-        if not name:
+        if not path:
             raise FileDescriptorNotExists(
                 "Can't find file with such a file descriptor."
             )
 
-        descriptor_id = self._system_state.get_descriptor_id(name)
+        descriptor_id = self._system_state.get_descriptor_id(path)
 
         if not descriptor_id:
             raise FileNotExists("Can't find file with such a name.")
@@ -25,5 +25,5 @@ class ReadCommand(BaseFSCommand):
         )
         content = descriptor.read_content(size, offset)
 
-        self._logger.info(f"Successfully read from [{name}] with fd [{fd}]:")
+        self._logger.info(f"Successfully read from [{path}] with fd [{fd}]:")
         self._logger.info(content)

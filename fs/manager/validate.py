@@ -3,6 +3,16 @@ from collections import Callable
 from constants import FILENAME_MAXSIZE_BYTES, N_DESCRIPTORS
 
 
+def validate_path(path: str, error_cb: Callable[[str], None]) -> str:
+    if len(path.split("/")[-1]) > FILENAME_MAXSIZE_BYTES:
+        error_cb(f"File name length must be less than {FILENAME_MAXSIZE_BYTES}.")
+
+    if not all(path.split("/")):
+        error_cb("File path is incorrect.")
+
+    return path
+
+
 def validate_mkfs(n: int, error_cb: Callable[[str], None]) -> int:
     if n > N_DESCRIPTORS:
         error_cb(f"Cannot create FS with more than {N_DESCRIPTORS} descriptor.")
@@ -41,16 +51,22 @@ def validate_write(
 def validate_truncate(
     params: tuple[str, str], error_cb: Callable[[str], None]
 ) -> tuple[str, int]:
-    name, size = params
+    path, size = params
+
+    path = validate_path(path, error_cb)
 
     if int(size) < 0:
         error_cb("Cannot use size less than 0.")
 
-    return name, int(size)
+    return path, int(size)
 
 
-def validate_filename(name: str, error_cb: Callable[[str], None]) -> str:
-    if len(name) > FILENAME_MAXSIZE_BYTES:
-        error_cb(f"File name length must be less than {FILENAME_MAXSIZE_BYTES}.")
+def validate_symlink(
+    params: tuple[str, str], error_cb: Callable[[str], None]
+) -> tuple[str, str]:
+    content, path = params
 
-    return name
+    path = validate_path(path, error_cb)
+    content = validate_path(content, error_cb)
+
+    return content, path
