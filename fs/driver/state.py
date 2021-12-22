@@ -160,6 +160,6 @@ class SystemState:
         with self.state as s:
             return bool(s.descriptors)
 
-    def get_cwd_name(self) -> str:
+    def get_cwd(self) -> str:
         with self.state as s:
             return s.cwd

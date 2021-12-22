@@ -30,6 +30,14 @@ class FileAlreadyExists(Exception):
     pass
 
 
+class DirectoryAlreadyExists(Exception):
+    """
+    Can't create new file with name of already existing one.
+    """
+
+    pass
+
+
 class FSNotMounted(Exception):
     """
     Can't unmount new FS till one is not mounted.

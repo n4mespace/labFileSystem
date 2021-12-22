@@ -24,6 +24,7 @@ class MkfsCommand(BaseFSCommand):
 
         self._memory_proxy.clear()
         self.save(root.descriptor, ROOT_DIRECTORY_PATH)
+
         self._memory_proxy.write_empty_blocks(N_BLOCKS_MAX, start_from=1)
 
         self._logger.info("Successfully formatted.")

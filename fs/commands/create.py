@@ -21,8 +21,8 @@ class CreateCommand(BaseFSCommand):
         file = self._memory_proxy.create_file(
             n=n,
             directory_descriptor=current_directory_descriptor,
-            name=name,
+            name=path,
         )
 
         self.save(file.descriptor, path)
-        self.save(current_directory_descriptor, self._system_state.get_cwd_name())
+        self.save(current_directory_descriptor, self._system_state.get_cwd())
