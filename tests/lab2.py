@@ -11,10 +11,10 @@ from fs.commands.truncate import TruncateCommand
 from fs.commands.unlink import UnlinkCommand
 from fs.commands.write import WriteCommand
 from fs.driver.utils import form_header_from_bytes
-from tests.base import LOREM_IPSUM, FSBaseMountAndMkfsTestCase
+from tests.conftest import LOREM_IPSUM, FSBaseMountAndMkfsTestCase
 
 
-class FSWorkLab2Tests(FSBaseMountAndMkfsTestCase):
+class TestFSLab2(FSBaseMountAndMkfsTestCase):
     def test_create_file(self) -> None:
         filename = "file1"
         command = CreateCommand(path=filename)

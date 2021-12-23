@@ -1,38 +1,34 @@
-from constants import ROOT_DESCRIPTOR_N
 from fs.commands.base import BaseFSCommand
+from fs.exceptions import FileNotExists
 
 
 class UnlinkCommand(BaseFSCommand):
     def exec(self) -> None:
         path = self.kwargs["path"]
 
-        descriptor_id = self._system_state.get_descriptor_id(path)
+        resolved_path = self.resolve_path(path)
 
-        if descriptor_id:
-            descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
-            root_blocks = self._system_state.get_descriptor_blocks(ROOT_DESCRIPTOR_N)
-
-            descriptor = self._memory_proxy.get_descriptor(
-                descriptor_id, descriptor_blocks
+        try:
+            file_descriptor = self.get_file_descriptor_by_path(
+                resolved_path.fs_object_path
             )
-            total_refs_count = self._memory_proxy.add_ref_count(descriptor, -1)
+        except FileNotExists:
+            self._logger.info(f"Can't delete symlink for non existing file `{path}`.")
+
+        else:
+            total_refs_count = self._memory_proxy.add_ref_count(file_descriptor, -1)
 
             if not total_refs_count:
-                current_directory_descriptor = (
-                    self._memory_proxy.get_directory_descriptor(
-                        ROOT_DESCRIPTOR_N, root_blocks
-                    )
-                )
-                current_directory_descriptor.remove_directory_link(path)
+                resolved_path.directory.remove_directory_link(path)
 
-                self._memory_proxy.write(current_directory_descriptor)
-                self._system_state.remove(descriptor, path)
+                self._memory_proxy.write(resolved_path.directory)
+                self._system_state.remove(file_descriptor, resolved_path.fs_object_path)
 
             else:
-                self._system_state.unmap_path_from_descriptor(path)
+                self._system_state.unmap_path_from_descriptor(
+                    resolved_path.fs_object_path
+                )
 
             self._logger.info(
-                f"Successfully unlinked `{path}` with descriptor `{descriptor_id}`."
+                f"Successfully unlinked `{path}` with descriptor `{file_descriptor.n}`."
             )
-        else:
-            self._logger.info(f"Can't delete symlink for non existing file `{path}`.")

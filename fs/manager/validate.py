@@ -1,13 +1,13 @@
 from collections import Callable
 
-from constants import FILENAME_MAXSIZE_BYTES, N_DESCRIPTORS
+from constants import FILENAME_MAXSIZE_BYTES, N_DESCRIPTORS, PATH_DIVIDER
 
 
 def validate_path(path: str, error_cb: Callable[[str], None]) -> str:
-    if len(path.split("/")[-1]) > FILENAME_MAXSIZE_BYTES:
+    if len(path.split(PATH_DIVIDER)[-1]) > FILENAME_MAXSIZE_BYTES:
         error_cb(f"File name length must be less than {FILENAME_MAXSIZE_BYTES}.")
 
-    if not all(path.split("/")):
+    if not all(path.split(PATH_DIVIDER)):
         error_cb("File path is incorrect.")
 
     return path

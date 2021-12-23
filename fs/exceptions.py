@@ -14,6 +14,22 @@ class FileNotExists(Exception):
     pass
 
 
+class DirectoryNotExists(Exception):
+    """
+    Can't find directory with such a name.
+    """
+
+    pass
+
+
+class DirectoryNotEmpty(Exception):
+    """
+    Can't delete non-empty directory.
+    """
+
+    pass
+
+
 class FileDescriptorNotExists(Exception):
     """
     Can't find file with such a file descriptor.

@@ -2,10 +2,10 @@ from constants import BLOCK_SIZE_BYTES, N_BLOCKS_MAX, N_DESCRIPTORS
 from fs.commands.mkfs import MkfsCommand
 from fs.commands.mount import MountCommand
 from fs.commands.umount import UmountCommand
-from tests.base import FSBaseTestCase
+from tests.conftest import FSBaseTestCase
 
 
-class FSInitializationTests(FSBaseTestCase):
+class TestFSInitialization(FSBaseTestCase):
     def test_mount(self) -> None:
         command = MountCommand()
         command.exec()

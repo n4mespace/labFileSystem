@@ -19,5 +19,7 @@ DIRECTORY_MAPPING_BYTES = FILENAME_MAXSIZE_BYTES + 1  # +1 for descriptor id.
 MAX_SYMLINK_HOPS = 10
 
 # Filesystem wide.
+PATH_DIVIDER = "/"
+DIRECTORY_DEFAULT_LINKS_COUNT = 2
 MEMORY_PATH = "fake_memory.mem"
 CONFIG_PATH = "system_config.json"

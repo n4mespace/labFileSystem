@@ -1,5 +1,5 @@
 from fs.commands.base import BaseFSCommand
-from fs.exceptions import FileDescriptorNotExists, FileNotExists
+from fs.exceptions import FileDescriptorNotExists
 
 
 class CloseCommand(BaseFSCommand):
@@ -13,17 +13,10 @@ class CloseCommand(BaseFSCommand):
                 "Can't find file with such a file descriptor."
             )
 
-        descriptor_id = self._system_state.get_descriptor_id(path)
-
-        if not descriptor_id:
-            raise FileNotExists("Can't find file with such a path.")
-
-        descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
+        file_descriptor = self.get_file_descriptor_by_path(path)
+        file_descriptor.opened = False
 
         self._system_state.unmap_fd_from_path(fd)
 
-        descriptor = self._memory_proxy.get_descriptor(descriptor_id, descriptor_blocks)
-        descriptor.opened = False
-
-        self.save(descriptor, path)
+        self.save(file_descriptor, path)
         self._logger.info(f"Successfully closed file [{path}] with fd [{fd}].")

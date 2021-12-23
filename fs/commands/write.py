@@ -1,5 +1,5 @@
 from fs.commands.base import BaseFSCommand
-from fs.exceptions import FileDescriptorNotExists, FileNotExists
+from fs.exceptions import FileDescriptorNotExists
 
 
 class WriteCommand(BaseFSCommand):
@@ -17,20 +17,11 @@ class WriteCommand(BaseFSCommand):
                 "Can't find file with such a file descriptor."
             )
 
-        descriptor_id = self._system_state.get_descriptor_id(path)
+        file_descriptor = self.get_file_descriptor_by_path(path)
+        file_descriptor.write_content(content, offset)
+        file_descriptor.update_size()
 
-        if not descriptor_id:
-            raise FileNotExists("Can't find file with such a path.")
-
-        descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
-
-        descriptor = self._memory_proxy.get_file_descriptor(
-            descriptor_id, descriptor_blocks
-        )
-        descriptor.write_content(content, offset)
-        descriptor.update_size()
-
-        self.save(descriptor, path)
+        self.save(file_descriptor, path)
         self._logger.info(
             f"Successfully written `{content}` to [{path}] with fd [{fd}]."
         )

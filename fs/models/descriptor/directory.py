@@ -27,6 +27,10 @@ class DirectoryDescriptor(Descriptor):
         for block in self.blocks:
             block.remove_link(name)
 
+    def clear(self) -> None:
+        for link in reversed(self.read_directory_links()):
+            self.remove_directory_link(link)
+
 
 @dataclass
 class Directory(FSObject):

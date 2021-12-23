@@ -5,10 +5,9 @@ from fs.exceptions import DirectoryAlreadyExists
 class MkdirCommand(BaseFSCommand):
     def exec(self) -> None:
         path = self.kwargs["path"]
+        resolved_path = self.resolve_path(path)
 
-        destination_directory, destination_name = ...
-
-        if self._system_state.check_path_exists():
+        if self._system_state.check_path_exists(resolved_path.fs_object_path):
             raise DirectoryAlreadyExists(
                 "Can't create new directory, one is already exists."
             )
@@ -17,11 +16,12 @@ class MkdirCommand(BaseFSCommand):
 
         new_directory = self._memory_proxy.create_directory(
             n=n,
-            name=destination_name,
+            name=resolved_path.fs_object_name,
             opened=False,
-            parent=destination_directory,
+            parent=resolved_path.directory,
         )
 
-        self.save(new_directory.descriptor, path)
+        self.save(new_directory.descriptor, resolved_path.fs_object_path)
+        self.save(resolved_path.directory, resolved_path.directory_path)
 
         self._logger.info(f"Successfully created directory [{path}].")

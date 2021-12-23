@@ -1,29 +1,24 @@
 from fs.commands.base import BaseFSCommand
-from fs.exceptions import FileNotExists
 
 
 class TruncateCommand(BaseFSCommand):
     def exec(self) -> None:
         path, size = self.kwargs["path"], self.kwargs["size"]
 
-        descriptor_id = self._system_state.get_descriptor_id(path)
+        resolved_path = self.resolve_path(path)
 
-        if not descriptor_id:
-            raise FileNotExists("Can't find file with such a path.")
+        file_descriptor = self.get_file_descriptor_by_path(resolved_path.fs_object_path)
+        old_size = file_descriptor.size
 
-        descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
-        descriptor = self._memory_proxy.get_descriptor(descriptor_id, descriptor_blocks)
-        old_size = descriptor.size
-
-        blocks_deleted = descriptor.truncate(size)
+        blocks_deleted = file_descriptor.truncate(size)
 
         # Delete unused blocks.
         for block in blocks_deleted:
             self._memory_proxy.write_empty_blocks(block.n + 1, start_from=block.n)
 
-        descriptor.update_size()
+        file_descriptor.update_size()
 
-        self.save(descriptor, path)
+        self.save(file_descriptor, resolved_path.fs_object_path)
         self._logger.info(
             f"Successfully changed [{path}] size from [{old_size}] to [{size}]."
         )

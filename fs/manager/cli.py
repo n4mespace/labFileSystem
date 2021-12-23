@@ -4,6 +4,7 @@ from fs.commands.base import BaseFSCommand
 from fs.commands.cd import CdCommand
 from fs.commands.close import CloseCommand
 from fs.commands.create import CreateCommand
+from fs.commands.cwd import CwdCommand
 from fs.commands.fstat import FstatCommand
 from fs.commands.link import LinkCommand
 from fs.commands.ls import LsCommand
@@ -47,6 +48,7 @@ class FsManager:
         "rmdir": RmdirCommand,
         "cd": CdCommand,
         "symlink": SymlinkCommand,
+        "cwd": CwdCommand,
     }
 
     def __init__(self) -> None:
@@ -116,3 +118,6 @@ class FsManager:
         elif self.args.symlink:
             content, path = validate_symlink(self.args.symlink, self.parser.error)
             self.commands["symlink"](content=content, path=path).exec()
+
+        elif self.args.cwd:
+            self.commands["cwd"]().exec()

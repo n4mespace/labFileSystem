@@ -163,3 +163,7 @@ class SystemState:
     def get_cwd(self) -> str:
         with self.state as s:
             return s.cwd
+
+    def set_cwd(self, cwd: str) -> None:
+        with self.state as s:
+            s.cwd = cwd

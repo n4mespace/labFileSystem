@@ -185,6 +185,7 @@ class MemoryStorageProxy:
 
     def create_directory(self, n: int, name: str, parent: DirectoryDescriptor,
                          opened: bool = False, root: bool = False) -> Directory:
+
         block_n = ROOT_BLOCK_N if root else self.get_available_block_n()
 
         descriptor = DirectoryDescriptor(
@@ -198,6 +199,10 @@ class MemoryStorageProxy:
         descriptor.write_link(name="..", descriptor_id=n if root else parent.n)
 
         descriptor.size += 3
+
+        if not root:
+            parent.write_link(name, n)
+            parent.size += len(name)
 
         self._logger.info(f"Created directory descriptor [{n}].")
 

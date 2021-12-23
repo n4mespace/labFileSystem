@@ -124,5 +124,11 @@ def parser_factory() -> ArgumentParser:
         metavar=("content", "path"),
         help="create symlink with `content` inside.",
     )
+    parser.add_argument(
+        "--cwd",
+        action="store_true",
+        default=False,
+        help="show current working directory.",
+    )
 
     return parser

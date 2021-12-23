@@ -1,6 +1,5 @@
 from tabulate import tabulate
 
-from constants import ROOT_DESCRIPTOR_N
 from fs.commands.base import BaseFSCommand
 from fs.exceptions import FSNotFormatted
 from fs.models.descriptor.directory import DirectoryDescriptor
@@ -19,16 +18,12 @@ class LsCommand(BaseFSCommand):
         if not self._system_state.check_system_formatted():
             raise FSNotFormatted("Can't perform actions on not formatted fs.")
 
-        root_blocks = self._system_state.get_descriptor_blocks(ROOT_DESCRIPTOR_N)
+        resolved_path = self.resolve_path()
 
-        current_directory = self._memory_proxy.get_directory_descriptor(
-            ROOT_DESCRIPTOR_N, root_blocks
-        )
-        links = current_directory.read_directory_links()
-
+        links = resolved_path.directory.read_directory_links()
         output_info = []
 
-        for name, descriptor_id in links.items():
+        for fs_object_name, descriptor_id in links.items():
             descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
             descriptor = self._memory_proxy.get_descriptor(
                 descriptor_id, descriptor_blocks
@@ -36,7 +31,7 @@ class LsCommand(BaseFSCommand):
 
             output_info.append(
                 [
-                    name,
+                    fs_object_name,
                     descriptor.n,
                     isinstance(descriptor, DirectoryDescriptor),
                     descriptor.refs_count,
@@ -45,10 +40,12 @@ class LsCommand(BaseFSCommand):
             )
 
             # Add also symlinks.
+            fs_object_path = resolved_path.fs_object_path + fs_object_name
+
             symlinks = [
                 link
                 for link, descriptor in self._system_state.get_path_to_descriptor_mapping().items()
-                if link and descriptor == descriptor_id and name != link
+                if link and fs_object_path != link and descriptor == descriptor_id
             ]
 
             for symlink in symlinks:

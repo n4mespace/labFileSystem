@@ -9,6 +9,7 @@ from fs.commands.mkfs import MkfsCommand
 from fs.commands.mount import MountCommand
 from fs.commands.umount import UmountCommand
 from fs.exceptions import FSNotMounted
+from fs.models.descriptor.directory import DirectoryDescriptor
 from fs.models.descriptor.file import FileDescriptor
 
 LOREM_IPSUM: str = (
@@ -42,9 +43,9 @@ class FSBaseMountAndMkfsTestCase(FSBaseTestCase):
         self._caplog = caplog
 
     def get_file_descriptor(
-        self, command: BaseFSCommand, filename: str
+        self, command: BaseFSCommand, filepath: str
     ) -> FileDescriptor:
-        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor = command._system_state.get_descriptor_id(filepath)
         self.assertIsNotNone(file_descriptor)
 
         file_descriptor_blocks = command._system_state.get_descriptor_blocks(
@@ -57,3 +58,20 @@ class FSBaseMountAndMkfsTestCase(FSBaseTestCase):
         self.assertIsInstance(file, FileDescriptor)
 
         return file
+
+    def get_directory_descriptor(
+        self, command: BaseFSCommand, dirpath: str
+    ) -> DirectoryDescriptor:
+        directory_descriptor = command._system_state.get_descriptor_id(dirpath)
+        self.assertIsNotNone(directory_descriptor)
+
+        directory_descriptor_blocks = command._system_state.get_descriptor_blocks(
+            directory_descriptor
+        )
+
+        directory = command._memory_proxy.get_descriptor(
+            directory_descriptor, directory_descriptor_blocks
+        )
+        self.assertIsInstance(directory, DirectoryDescriptor)
+
+        return directory
