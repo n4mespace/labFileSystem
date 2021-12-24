@@ -6,9 +6,11 @@ class CdCommand(BaseFSCommand):
         path = self.kwargs["path"]
 
         current_resolved_path = self.resolve_path()
+
         current_directory_descriptor = self.get_directory_descriptor_by_path(
             current_resolved_path.fs_object_path
         )
+
         current_directory_descriptor.opened = False
         self.save(current_directory_descriptor, current_resolved_path.fs_object_path)
 

@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from constants import PATH_DIVIDER
+from constants import PATH_DIVIDER, ROOT_DIRECTORY_PATH
 from fs.driver.memory import MemoryStorageProxy
 from fs.driver.state import SystemState
 from fs.exceptions import DirectoryNotExists, FileNotExists
@@ -37,8 +37,8 @@ class BaseFSCommand(ABC):
 
         fs_object_name = path_parts[-1]
         fs_object_path = path
-        directory_path = path_parts[-2]
 
+        directory_path = path_parts[-2] if len(path_parts) > 1 else fs_object_name
         directory = self.get_directory_descriptor_by_path(directory_path)
 
         return ResolvedPath(
@@ -59,10 +59,13 @@ class BaseFSCommand(ABC):
     def resolve_path(
         self, path: Optional[str] = None, must_exists: bool = False
     ) -> ResolvedPath:
+        self_point_paths = {ROOT_DIRECTORY_PATH, ".", ".."}
         cwd = self._system_state.get_cwd()
-        path = path or cwd
 
-        if path.startswith(PATH_DIVIDER):
+        path = path or cwd
+        path = cwd if path in self_point_paths else path
+
+        if path.startswith(PATH_DIVIDER) or path in self_point_paths:
             return self._resolve_absolute_path(path, must_exists)
 
         return self._resolve_relative_path(path, must_exists)
