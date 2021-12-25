@@ -31,44 +31,48 @@ class BaseFSCommand(ABC):
         self._system_state.write(descriptor, path)
 
     def _resolve_absolute_path(
-        self, path: Optional[str] = None, must_exists: bool = False
+        self, path: Optional[str] = None, to_dir: bool = False
     ) -> ResolvedPath:
-        path_parts = path.split(PATH_DIVIDER)
+        path_parts = path.rsplit(PATH_DIVIDER, maxsplit=1)
 
         fs_object_name = path_parts[-1]
-        fs_object_path = path
+        directory_path = path_parts[-2] if len(path_parts) > 1 and not to_dir else path
 
-        directory_path = path_parts[-2] if len(path_parts) > 1 else fs_object_name
         directory = self.get_directory_descriptor_by_path(directory_path)
 
         return ResolvedPath(
             directory=directory,
             directory_path=directory_path,
             fs_object_name=fs_object_name,
-            fs_object_path=fs_object_path,
+            fs_object_path=path,
         )
 
     def _resolve_relative_path(
-        self, path: Optional[str] = None, must_exists: bool = False
+        self, path: Optional[str] = None, to_dir: bool = False
     ) -> ResolvedPath:
         cwd = self._system_state.get_cwd()
         path = cwd + PATH_DIVIDER + path
 
-        return self._resolve_absolute_path(path, must_exists)
+        return self._resolve_absolute_path(path, to_dir)
 
     def resolve_path(
-        self, path: Optional[str] = None, must_exists: bool = False
+        self, origin_path: Optional[str] = None, to_dir: bool = False
     ) -> ResolvedPath:
         self_point_paths = {ROOT_DIRECTORY_PATH, ".", ".."}
         cwd = self._system_state.get_cwd()
 
-        path = path or cwd
+        path = origin_path or cwd
         path = cwd if path in self_point_paths else path
 
-        if path.startswith(PATH_DIVIDER) or path in self_point_paths:
-            return self._resolve_absolute_path(path, must_exists)
+        if origin_path in self_point_paths:
+            resolver_path = self._resolve_absolute_path(path, to_dir)
+            resolver_path.fs_object_path = resolver_path.directory_path
+            return resolver_path
 
-        return self._resolve_relative_path(path, must_exists)
+        elif path.startswith(PATH_DIVIDER) or path in self_point_paths:
+            return self._resolve_absolute_path(path, to_dir)
+
+        return self._resolve_relative_path(path, to_dir)
 
     def get_directory_descriptor_by_path(self, path: str) -> DirectoryDescriptor:
         descriptor_id = self._system_state.get_descriptor_id(path)

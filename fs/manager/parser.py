@@ -114,7 +114,8 @@ def parser_factory() -> ArgumentParser:
     parser.add_argument(
         "--cd",
         action="store",
-        default=ROOT_DIRECTORY_PATH,
+        nargs="?",
+        const=ROOT_DIRECTORY_PATH,
         type=str,
         metavar="path",
         help="change current working dir.",

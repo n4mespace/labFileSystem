@@ -16,7 +16,7 @@ class TestFSLab3(FSBaseMountAndMkfsTestCase):
         command = MkdirCommand(path=dirname)
         command.exec()
 
-        dirpath = command.resolve_path(path=dirname)
+        dirpath = command.resolve_path(dirname)
 
         self.assertTrue(
             dirpath.fs_object_path
@@ -32,7 +32,7 @@ class TestFSLab3(FSBaseMountAndMkfsTestCase):
 
         command = RmdirCommand(path=dirname)
 
-        dirpath = command.resolve_path(path=dirname)
+        dirpath = command.resolve_path(dirname)
 
         directory_descriptor = command._system_state.get_descriptor_id(
             dirpath.fs_object_path
@@ -94,7 +94,7 @@ class TestFSLab3(FSBaseMountAndMkfsTestCase):
         MkdirCommand(path=dirname).exec()
 
         command = CwdCommand()
-        dirpath = command.resolve_path(path=dirname)
+        dirpath = command.resolve_path(dirname)
 
         command = CdCommand(path=dirpath.fs_object_path)
         command.exec()

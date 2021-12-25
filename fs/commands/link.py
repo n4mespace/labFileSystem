@@ -7,7 +7,7 @@ class LinkCommand(BaseFSCommand):
         path1, path2 = self.kwargs["path1"], self.kwargs["path2"]
 
         resolved_path1 = self.resolve_path(path1)
-        resolved_path2 = self.resolve_path(path2, must_exists=False)
+        resolved_path2 = self.resolve_path(path2)
 
         try:
             file_descriptor = self.get_file_descriptor_by_path(
