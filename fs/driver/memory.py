@@ -190,14 +190,6 @@ class MemoryStorageProxy:
 
         return descriptor
 
-    def get_symlink_descriptor(self, n: int, blocks: list[int]) -> SymlinkDescriptor:
-        descriptor = self.get_descriptor(n, blocks)
-
-        if not isinstance(descriptor, SymlinkDescriptor):
-            raise WrongDescriptorClass("Get wrong descriptor class.")
-
-        return descriptor
-
     def create_directory(self, n: int, name: str, parent: DirectoryDescriptor,
                          opened: bool = False, root: bool = False) -> Directory:
 

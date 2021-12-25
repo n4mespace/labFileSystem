@@ -28,10 +28,10 @@ class LsCommand(BaseFSCommand):
 
         resolved_path = self.resolve_path(to_dir=True)
 
-        links = resolved_path.directory.read_directory_links()
+        directory_links = resolved_path.directory.read_directory_links()
         output_info = []
 
-        for fs_object_name, descriptor_id in links.items():
+        for fs_object_name, descriptor_id in directory_links.items():
             descriptor_blocks = self._system_state.get_descriptor_blocks(descriptor_id)
             descriptor = self._memory_proxy.get_descriptor(
                 descriptor_id, descriptor_blocks
@@ -49,24 +49,24 @@ class LsCommand(BaseFSCommand):
                 ]
             )
 
-            # Add also symlinks.
-            symlink_resolved_path = self.resolve_path(fs_object_name)
+            # Add also links to fs object.
+            links_resolved_path = self.resolve_path(fs_object_name)
 
-            symlinks = [
-                link
+            filtered_links = [
+                self.resolve_path(link).fs_object_name
                 for link, descriptor in self._system_state.get_path_to_descriptor_mapping().items()
                 if (
-                    link.replace(symlink_resolved_path.directory_path, "", 1)
+                    link.replace(links_resolved_path.directory_path, "", 1)
                     and descriptor == descriptor_id
-                    and symlink_resolved_path.fs_object_path != link
+                    and links_resolved_path.fs_object_path != link
                     and resolved_path.directory_path != link
                 )
             ]
 
-            for symlink in symlinks:
+            for link in filtered_links:
                 output_info.append(
                     [
-                        symlink,
+                        link,
                         descriptor.n,
                         descriptor_type,
                         descriptor.refs_count,
