@@ -1,5 +1,6 @@
 from tabulate import tabulate
 
+from constants import PATH_DIVIDER
 from fs.commands.base import BaseFSCommand
 from fs.exceptions import FSNotFormatted
 from fs.models.descriptor.base import Descriptor
@@ -57,6 +58,8 @@ class LsCommand(BaseFSCommand):
                 for link, descriptor in self._system_state.get_path_to_descriptor_mapping().items()
                 if (
                     link.replace(links_resolved_path.directory_path, "", 1)
+                    and link
+                    != resolved_path.directory_path + PATH_DIVIDER + fs_object_name
                     and descriptor == descriptor_id
                     and links_resolved_path.fs_object_path != link
                     and resolved_path.directory_path != link

@@ -22,7 +22,7 @@ class RmdirCommand(BaseFSCommand):
         self._memory_proxy.add_ref_count(directory, -1)
         self._system_state.remove(directory, resolved_path.fs_object_path)
 
-        resolved_path.directory.remove_directory_link(resolved_path.fs_object_path)
+        resolved_path.directory.remove_directory_link(resolved_path.fs_object_name)
         resolved_path.directory.update_size()
         self.save(resolved_path.directory, resolved_path.directory_path)
 

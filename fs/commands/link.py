@@ -6,7 +6,7 @@ class LinkCommand(BaseFSCommand):
     def exec(self) -> None:
         path1, path2 = self.kwargs["path1"], self.kwargs["path2"]
 
-        resolved_path1 = self.resolve_path(path1)
+        resolved_path1 = self.resolve_path(path1, resolve_symlink=False)
         resolved_path2 = self.resolve_path(path2)
 
         try:

@@ -6,7 +6,7 @@ class UnlinkCommand(BaseFSCommand):
     def exec(self) -> None:
         path = self.kwargs["path"]
 
-        resolved_path = self.resolve_path(path)
+        resolved_path = self.resolve_path(path, resolve_symlink=False)
 
         try:
             file_descriptor = self.get_file_descriptor_by_path(

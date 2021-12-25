@@ -100,3 +100,11 @@ class BlockWriteDenied(Exception):
     """
 
     pass
+
+
+class MaxSymlinkHopsExceeded(Exception):
+    """
+    Maximum recursion for symlinks exceeded.
+    """
+
+    pass

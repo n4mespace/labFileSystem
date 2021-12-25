@@ -16,7 +16,7 @@ FILENAME_MAXSIZE_BYTES = 10
 DIRECTORY_MAPPING_BYTES = FILENAME_MAXSIZE_BYTES + 1  # +1 for descriptor id.
 
 # Symlinks wide.
-MAX_SYMLINK_HOPS = 10
+MAX_SYMLINK_HOPS = 20
 
 # Filesystem wide.
 PATH_DIVIDER = "/"

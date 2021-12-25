@@ -1,18 +1,16 @@
 import logging
-from unittest import mock
 
-from constants import (BLOCK_HEADER_SIZE_BYTES, BLOCK_SIZE_BYTES,
+from constants import (BLOCK_HEADER_SIZE_BYTES, BLOCK_SIZE_BYTES, PATH_DIVIDER,
                        ROOT_DIRECTORY_PATH)
 from fs.commands.cd import CdCommand
 from fs.commands.cwd import CwdCommand
 from fs.commands.link import LinkCommand
 from fs.commands.mkdir import MkdirCommand
-from fs.commands.open import OpenCommand
 from fs.commands.rmdir import RmdirCommand
 from fs.commands.symlink import SymlinkCommand
 from fs.commands.unlink import UnlinkCommand
-from fs.commands.write import WriteCommand
 from fs.driver.utils import form_header_from_bytes
+from fs.exceptions import MaxSymlinkHopsExceeded
 from tests.conftest import FSBaseMountAndMkfsTestCase
 
 
@@ -37,7 +35,6 @@ class TestFSLab3(FSBaseMountAndMkfsTestCase):
         MkdirCommand(path=dirname).exec()
 
         command = RmdirCommand(path=dirname)
-
         dirpath = command.resolve_path(dirname)
 
         directory_descriptor = command._system_state.get_descriptor_id(
@@ -111,19 +108,10 @@ class TestFSLab3(FSBaseMountAndMkfsTestCase):
         symlink_name = "s1"
         test_content = "/dir1/dir2"
 
-        SymlinkCommand(path=symlink_name, content=test_content).exec()
-
-        test_fd = 100
-
-        # For getting predictable `fd` we should mock `random.randint` result.
-        with mock.patch("random.randint", lambda _x, _y: test_fd):
-            OpenCommand(path=symlink_name).exec()
-
-        command = WriteCommand(fd=str(test_fd), offset=0, content=test_content)
+        command = SymlinkCommand(path=symlink_name, content=test_content)
         command.exec()
 
-        resolved_path = command.resolve_path(symlink_name)
-        symlink = self.get_file_descriptor(command, resolved_path.fs_object_path)
+        symlink = self.get_symlink_descriptor(command, PATH_DIVIDER + symlink_name)
         self.assertEqual(symlink.size, len(test_content))
 
         content = symlink.read_content(len(test_content), offset=0)
@@ -139,18 +127,16 @@ class TestFSLab3(FSBaseMountAndMkfsTestCase):
         command = LinkCommand(path1=symlink_name, path2=link_filename)
         command.exec()
 
-        resolved_path = command.resolve_path(symlink_name)
-        symlink = self.get_symlink_descriptor(command, resolved_path.fs_object_path)
+        symlink = self.get_symlink_descriptor(command, PATH_DIVIDER + symlink_name)
 
-        link_resolved_path = command.resolve_path(symlink_name)
         symlink_link = self.get_symlink_descriptor(
-            command, link_resolved_path.fs_object_path
+            command, PATH_DIVIDER + link_filename
         )
 
         self.assertEqual(symlink.n, symlink_link.n)
         self.assertEqual(symlink.refs_count, 2)
 
-    def test_unlink_file(self) -> None:
+    def test_unlink_symlink(self) -> None:
         symlink_name = "s1"
         test_content = "/dir1/dir2"
 
@@ -162,14 +148,46 @@ class TestFSLab3(FSBaseMountAndMkfsTestCase):
         command = UnlinkCommand(path=link_filename)
         command.exec()
 
-        link_resolved_path = command.resolve_path(link_filename)
-
         self.assertTrue(
-            link_resolved_path.fs_object_path
+            PATH_DIVIDER + link_filename
             not in command._system_state.get_path_to_descriptor_mapping()
         )
 
-        resolved_path = command.resolve_path(symlink_name)
-
-        symlink = self.get_symlink_descriptor(command, resolved_path.fs_object_path)
+        symlink = self.get_symlink_descriptor(command, PATH_DIVIDER + symlink_name)
         self.assertEqual(symlink.refs_count, 1)
+
+    def test_cd_symlink(self) -> None:
+        symlink_name = "s1"
+        test_content = "/dir1"
+
+        SymlinkCommand(path=symlink_name, content=test_content).exec()
+
+        dirname1 = "dir1"
+        MkdirCommand(path=dirname1).exec()
+        self._test_cwd(right_cwd="/")
+
+        CdCommand(path=symlink_name).exec()
+        self._test_cwd(right_cwd=test_content)
+
+    def test_cd_symlink_within_other_dir(self) -> None:
+        symlink_name = "s1"
+        test_content = "/dir2"
+
+        dirname1 = "dir1"
+        MkdirCommand(path=dirname1).exec()
+
+        dirname2 = "dir2"
+        MkdirCommand(path=dirname2).exec()
+
+        CdCommand(path=dirname1).exec()
+        SymlinkCommand(path=symlink_name, content=test_content).exec()
+
+        CdCommand(path=symlink_name).exec()
+        self._test_cwd(right_cwd=test_content)
+
+    def test_cd_symlink_max_hops(self) -> None:
+        symlink_name = "s1"
+        test_content = "/s1"
+
+        SymlinkCommand(path=symlink_name, content=test_content).exec()
+        self.assertRaises(MaxSymlinkHopsExceeded, CdCommand(path=symlink_name).exec)

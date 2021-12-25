@@ -6,7 +6,7 @@ class SymlinkCommand(BaseFSCommand):
     def exec(self) -> None:
         content, path = self.kwargs["content"], self.kwargs["path"]
 
-        resolved_path = self.resolve_path(path)
+        resolved_path = self.resolve_path(path, resolve_symlink=False)
 
         if self._system_state.check_path_exists(resolved_path.fs_object_path):
             raise FileAlreadyExists(
