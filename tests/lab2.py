@@ -20,10 +20,13 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
         command = CreateCommand(path=filename)
         command.exec()
 
+        resolved_path = command.resolve_path(filename)
+
         self.assertTrue(
-            filename in command._system_state.get_path_to_descriptor_mapping()
+            resolved_path.fs_object_path
+            in command._system_state.get_path_to_descriptor_mapping()
         )
-        self.get_file_descriptor(command, filename)
+        self.get_file_descriptor(command, resolved_path.fs_object_path)
 
     def test_create_n_files(self) -> None:
         for i in range(5):
@@ -31,7 +34,9 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
             command = CreateCommand(path=filename)
             command.exec()
 
-            self.get_file_descriptor(command, filename)
+            resolved_path = command.resolve_path(filename)
+
+            self.get_file_descriptor(command, resolved_path.fs_object_path)
 
     def test_ls_files(self) -> None:
         created_files = []
@@ -61,8 +66,11 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
         command = LinkCommand(path1=filename, path2=link_filename)
         command.exec()
 
-        file = self.get_file_descriptor(command, filename)
-        file_link = self.get_file_descriptor(command, filename)
+        resolved_path = command.resolve_path(filename)
+        file = self.get_file_descriptor(command, resolved_path.fs_object_path)
+
+        link_resolved_path = command.resolve_path(filename)
+        file_link = self.get_file_descriptor(command, link_resolved_path.fs_object_path)
 
         self.assertEqual(file.n, file_link.n)
         self.assertEqual(file.refs_count, 2)
@@ -77,11 +85,16 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
         command = UnlinkCommand(path=link_filename)
         command.exec()
 
+        link_resolved_path = command.resolve_path(link_filename)
+
         self.assertTrue(
-            link_filename not in command._system_state.get_path_to_descriptor_mapping()
+            link_resolved_path.fs_object_path
+            not in command._system_state.get_path_to_descriptor_mapping()
         )
 
-        file = self.get_file_descriptor(command, filename)
+        resolved_path = command.resolve_path(filename)
+
+        file = self.get_file_descriptor(command, resolved_path.fs_object_path)
         self.assertEqual(file.refs_count, 1)
 
     def test_delete_file(self) -> None:
@@ -89,8 +102,11 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
         CreateCommand(path=filename).exec()
 
         command = UnlinkCommand(path=filename)
+        resolved_path = command.resolve_path(filename)
 
-        file_descriptor = command._system_state.get_descriptor_id(filename)
+        file_descriptor = command._system_state.get_descriptor_id(
+            resolved_path.fs_object_path
+        )
         self.assertIsNotNone(file_descriptor)
 
         file_descriptor_blocks = command._system_state.get_descriptor_blocks(
@@ -129,7 +145,8 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
 
         self.assertTrue(str(test_fd) in command._system_state.get_fd_to_path_mapping())
 
-        file = self.get_file_descriptor(command, filename)
+        resolved_path = command.resolve_path(filename)
+        file = self.get_file_descriptor(command, resolved_path.fs_object_path)
         self.assertTrue(file.opened)
 
     def test_close_file(self) -> None:
@@ -145,7 +162,8 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
         command = CloseCommand(fd=str(test_fd))
         command.exec()
 
-        file = self.get_file_descriptor(command, filename)
+        resolved_path = command.resolve_path(filename)
+        file = self.get_file_descriptor(command, resolved_path.fs_object_path)
         self.assertFalse(file.opened)
 
     def test_write_file(self) -> None:
@@ -163,7 +181,8 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
         command = WriteCommand(fd=str(test_fd), offset=0, content=test_content)
         command.exec()
 
-        file = self.get_file_descriptor(command, filename)
+        resolved_path = command.resolve_path(filename)
+        file = self.get_file_descriptor(command, resolved_path.fs_object_path)
         self.assertEqual(file.size, len(test_content))
 
         content = file.read_content(len(test_content), offset=0)
@@ -182,7 +201,8 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
         command = WriteCommand(fd=str(test_fd), offset=3, content=LOREM_IPSUM)
         command.exec()
 
-        file = self.get_file_descriptor(command, filename)
+        resolved_path = command.resolve_path(filename)
+        file = self.get_file_descriptor(command, resolved_path.fs_object_path)
 
         self.assertEqual(file.size, len(LOREM_IPSUM))
 
@@ -206,7 +226,8 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
         command = TruncateCommand(path=filename, size=test_truncate_size)
         command.exec()
 
-        file = self.get_file_descriptor(command, filename)
+        resolved_path = command.resolve_path(filename)
+        file = self.get_file_descriptor(command, resolved_path.fs_object_path)
 
         content = file.read_content(file.size, offset=0)
         self.assertEqual(content, LOREM_IPSUM[:test_truncate_size])
@@ -228,6 +249,7 @@ class TestFSLab2(FSBaseMountAndMkfsTestCase):
         command = TruncateCommand(path=filename, size=test_truncate_size)
         command.exec()
 
-        file = self.get_file_descriptor(command, filename)
+        resolved_path = command.resolve_path(filename)
+        file = self.get_file_descriptor(command, resolved_path.fs_object_path)
 
         self.assertEqual(file.size, len(LOREM_IPSUM))

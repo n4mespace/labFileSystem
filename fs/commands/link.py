@@ -19,7 +19,7 @@ class LinkCommand(BaseFSCommand):
         else:
             self._memory_proxy.add_ref_count(file_descriptor, 1)
             self._system_state.map_path_to_descriptor(
-                resolved_path2.fs_object_path, file_descriptor
+                resolved_path2.fs_object_path, file_descriptor.n
             )
 
             self._logger.info(f"Successfully linked `{path2}` with `{path1}`.")
