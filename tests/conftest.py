@@ -9,8 +9,10 @@ from fs.commands.mkfs import MkfsCommand
 from fs.commands.mount import MountCommand
 from fs.commands.umount import UmountCommand
 from fs.exceptions import FSNotMounted
+from fs.models.descriptor.base import Descriptor
 from fs.models.descriptor.directory import DirectoryDescriptor
 from fs.models.descriptor.file import FileDescriptor
+from fs.models.descriptor.symlink import SymlinkDescriptor
 
 LOREM_IPSUM: str = (
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
@@ -42,36 +44,35 @@ class FSBaseMountAndMkfsTestCase(FSBaseTestCase):
     def inject_fixtures(self, caplog: LogCaptureFixture) -> None:
         self._caplog = caplog
 
+    def _get_descriptor(
+        self,
+        command: BaseFSCommand,
+        path: str,
+        descriptor_type: type[Descriptor],
+    ) -> Descriptor:
+        descriptor_id = command._system_state.get_descriptor_id(path)
+        self.assertIsNotNone(descriptor_id)
+
+        descriptor_blocks = command._system_state.get_descriptor_blocks(descriptor_id)
+
+        descriptor = command._memory_proxy.get_descriptor(
+            descriptor_id, descriptor_blocks
+        )
+        self.assertIsInstance(descriptor, descriptor_type)
+
+        return descriptor
+
     def get_file_descriptor(
         self, command: BaseFSCommand, filepath: str
     ) -> FileDescriptor:
-        file_descriptor = command._system_state.get_descriptor_id(filepath)
-        self.assertIsNotNone(file_descriptor)
-
-        file_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            file_descriptor
-        )
-
-        file = command._memory_proxy.get_descriptor(
-            file_descriptor, file_descriptor_blocks
-        )
-        self.assertIsInstance(file, FileDescriptor)
-
-        return file
+        return self._get_descriptor(command, filepath, FileDescriptor)  # type: ignore
 
     def get_directory_descriptor(
         self, command: BaseFSCommand, dirpath: str
     ) -> DirectoryDescriptor:
-        directory_descriptor = command._system_state.get_descriptor_id(dirpath)
-        self.assertIsNotNone(directory_descriptor)
+        return self._get_descriptor(command, dirpath, DirectoryDescriptor)  # type: ignore
 
-        directory_descriptor_blocks = command._system_state.get_descriptor_blocks(
-            directory_descriptor
-        )
-
-        directory = command._memory_proxy.get_descriptor(
-            directory_descriptor, directory_descriptor_blocks
-        )
-        self.assertIsInstance(directory, DirectoryDescriptor)
-
-        return directory
+    def get_symlink_descriptor(
+        self, command: BaseFSCommand, symlink_path: str
+    ) -> SymlinkDescriptor:
+        return self._get_descriptor(command, symlink_path, SymlinkDescriptor)  # type: ignore

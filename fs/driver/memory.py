@@ -13,6 +13,7 @@ from fs.models.block import Block
 from fs.models.descriptor.base import Descriptor
 from fs.models.descriptor.directory import Directory, DirectoryDescriptor
 from fs.models.descriptor.file import File, FileDescriptor
+from fs.models.descriptor.symlink import Symlink, SymlinkDescriptor
 from fs.models.raw import BlockContent, BlockHeader
 
 
@@ -53,6 +54,7 @@ class MemoryStorageProxy:
 
     def write(self, descriptor: Descriptor) -> None:
         directory = isinstance(descriptor, DirectoryDescriptor)
+        symlink = isinstance(descriptor, SymlinkDescriptor)
 
         with self.memory as m:
             for block in descriptor.blocks:
@@ -63,6 +65,7 @@ class MemoryStorageProxy:
                         header=BlockHeader(
                             used=True,
                             directory=directory,
+                            symlink=symlink,
                             ref_count=1,
                             size=sum(map(bool, block.content)),
                             opened=descriptor.opened,
@@ -84,6 +87,7 @@ class MemoryStorageProxy:
                             ref_count=0,
                             size=0,
                             opened=False,
+                            symlink=False,
                         ),
                     )
                 )
@@ -165,6 +169,9 @@ class MemoryStorageProxy:
         if descriptor_header.directory:
             return DirectoryDescriptor(**descriptor_params)
 
+        elif descriptor_header.symlink:
+            return SymlinkDescriptor(**descriptor_params)
+
         return FileDescriptor(**descriptor_params)
 
     def get_directory_descriptor(self, n: int, blocks: list[int]) -> DirectoryDescriptor:
@@ -179,6 +186,14 @@ class MemoryStorageProxy:
         descriptor = self.get_descriptor(n, blocks)
 
         if not isinstance(descriptor, FileDescriptor):
+            raise WrongDescriptorClass("Get wrong descriptor class.")
+
+        return descriptor
+
+    def get_symlink_descriptor(self, n: int, blocks: list[int]) -> SymlinkDescriptor:
+        descriptor = self.get_descriptor(n, blocks)
+
+        if not isinstance(descriptor, SymlinkDescriptor):
             raise WrongDescriptorClass("Get wrong descriptor class.")
 
         return descriptor
@@ -223,3 +238,21 @@ class MemoryStorageProxy:
         self._logger.info(f"Created file descriptor [{n}].")
 
         return File(descriptor=descriptor, name=name, directory=directory_descriptor)
+
+    def create_symlink(self, n: int, name: str, directory_descriptor: DirectoryDescriptor, content: str) -> Symlink:
+        block_n = self.get_available_block_n()
+
+        descriptor = SymlinkDescriptor(
+            n=n,
+            size=0,
+            refs_count=1,
+            opened=False,
+            blocks=[Block(n=block_n)],
+        )
+
+        descriptor.write_content(content)
+        directory_descriptor.write_link(name, n)
+
+        self._logger.info(f"Created symlink descriptor [{n}].")
+
+        return Symlink(descriptor=descriptor, name=name, directory=directory_descriptor)

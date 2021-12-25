@@ -16,5 +16,5 @@ class ReadCommand(BaseFSCommand):
         file_descriptor = self.get_file_descriptor_by_path(path)
         content = file_descriptor.read_content(size, offset)
 
-        self._logger.info(f"Successfully read from [{path}] with fd [{fd}]:")
+        self._logger.info(f"Successfully read from fd [{fd}]:")
         self._logger.info(content)

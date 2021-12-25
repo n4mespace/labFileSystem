@@ -67,6 +67,5 @@ def validate_symlink(
     content, path = params
 
     path = validate_path(path, error_cb)
-    content = validate_path(content, error_cb)
 
     return content, path

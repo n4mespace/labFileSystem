@@ -10,6 +10,7 @@ class BlockHeader:
     ref_count: int = 0
     size: int = 0
     opened: bool = False
+    symlink: bool = False
 
 
 @dataclass

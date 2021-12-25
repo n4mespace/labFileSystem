@@ -29,6 +29,7 @@ def form_header_bytes(header: BlockHeader) -> bytearray:
     header_bytes[BlockHeaderBytes.REF_COUNT] = header.ref_count
     header_bytes[BlockHeaderBytes.SIZE] = header.size
     header_bytes[BlockHeaderBytes.OPENED] = header.opened
+    header_bytes[BlockHeaderBytes.SYMLINK] = header.symlink
 
     return header_bytes
 
@@ -41,5 +42,6 @@ def form_header_from_bytes(header_bytes: bytes) -> BlockHeader:
     header.ref_count = header_bytes[BlockHeaderBytes.REF_COUNT]
     header.size = header_bytes[BlockHeaderBytes.SIZE]
     header.opened = bool(header_bytes[BlockHeaderBytes.OPENED])
+    header.symlink = bool(header_bytes[BlockHeaderBytes.SYMLINK])
 
     return header

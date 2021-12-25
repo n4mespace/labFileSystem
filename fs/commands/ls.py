@@ -2,17 +2,25 @@ from tabulate import tabulate
 
 from fs.commands.base import BaseFSCommand
 from fs.exceptions import FSNotFormatted
+from fs.models.descriptor.base import Descriptor
 from fs.models.descriptor.directory import DirectoryDescriptor
+from fs.models.descriptor.file import FileDescriptor
+from fs.models.descriptor.symlink import SymlinkDescriptor
 
 
 class LsCommand(BaseFSCommand):
     output_headers: list[str] = [
         "name",
         "descriptor",
-        "directory",
+        "type",
         "refs_count",
         "size",
     ]
+    descriptor_types: dict[Descriptor, str] = {
+        DirectoryDescriptor: "directory",
+        FileDescriptor: "file",
+        SymlinkDescriptor: "symlink",
+    }
 
     def exec(self) -> None:
         if not self._system_state.check_system_formatted():
@@ -29,11 +37,13 @@ class LsCommand(BaseFSCommand):
                 descriptor_id, descriptor_blocks
             )
 
+            descriptor_type = self.descriptor_types[type(descriptor)]
+
             output_info.append(
                 [
                     fs_object_name,
                     descriptor.n,
-                    isinstance(descriptor, DirectoryDescriptor),
+                    descriptor_type,
                     descriptor.refs_count,
                     descriptor.size,
                 ]
@@ -58,7 +68,7 @@ class LsCommand(BaseFSCommand):
                     [
                         symlink,
                         descriptor.n,
-                        isinstance(descriptor, DirectoryDescriptor),
+                        descriptor_type,
                         descriptor.refs_count,
                         descriptor.size,
                     ]

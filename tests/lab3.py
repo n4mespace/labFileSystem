@@ -1,11 +1,16 @@
 import logging
+from unittest import mock
 
 from constants import (BLOCK_HEADER_SIZE_BYTES, BLOCK_SIZE_BYTES,
                        ROOT_DIRECTORY_PATH)
 from fs.commands.cd import CdCommand
+from fs.commands.create import CreateCommand
 from fs.commands.cwd import CwdCommand
 from fs.commands.mkdir import MkdirCommand
+from fs.commands.open import OpenCommand
 from fs.commands.rmdir import RmdirCommand
+from fs.commands.symlink import SymlinkCommand
+from fs.commands.write import WriteCommand
 from fs.driver.utils import form_header_from_bytes
 from tests.conftest import FSBaseMountAndMkfsTestCase
 
@@ -100,3 +105,25 @@ class TestFSLab3(FSBaseMountAndMkfsTestCase):
         command.exec()
 
         self._test_cwd(right_cwd=dirpath.fs_object_path)
+
+    def test_create_symlink(self) -> None:
+        symlink_name = "s1"
+        test_content = "/dir1/dir2"
+
+        SymlinkCommand(path=symlink_name, content=test_content).exec()
+
+        test_fd = 100
+
+        # For getting predictable `fd` we should mock `random.randint` result.
+        with mock.patch("random.randint", lambda _x, _y: test_fd):
+            OpenCommand(path=symlink_name).exec()
+
+        command = WriteCommand(fd=str(test_fd), offset=0, content=test_content)
+        command.exec()
+
+        resolved_path = command.resolve_path(symlink_name)
+        symlink = self.get_file_descriptor(command, resolved_path.fs_object_path)
+        self.assertEqual(symlink.size, len(test_content))
+
+        content = symlink.read_content(len(test_content), offset=0)
+        self.assertEqual(content, test_content)

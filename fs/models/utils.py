@@ -7,3 +7,4 @@ class BlockHeaderBytes(IntEnum):
     REF_COUNT: int = 2
     SIZE: int = 3
     OPENED: int = 4
+    SYMLINK: int = 5
