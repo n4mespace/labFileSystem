@@ -86,7 +86,6 @@ class BaseFSCommand(ABC):
                     self._check_path_parts(
                         path_rest, prev_path + [path_part], resolve_symlink
                     )
-                    # + prev_path
                 )
 
         return prev_path + [path_part]
